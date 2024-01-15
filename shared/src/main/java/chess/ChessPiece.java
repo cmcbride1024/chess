@@ -2,7 +2,6 @@ package chess;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 
 /**
  * Represents a single chess piece
@@ -43,8 +42,12 @@ public class ChessPiece {
         return type;
     }
 
+    public String toString() {
+        return type.toString();
+    }
+
     /**
-     * @return Boolean indicating if position array
+     * @return Boolean indicating if ChessPosition
      * is in bounds
      */
     private boolean inBounds(ChessPosition pos) {
@@ -63,8 +66,18 @@ public class ChessPiece {
 
         for (int i = 0; i < up.length; i++) {
             ChessPosition currentPosition = new ChessPosition(row + up[i], col + right[i]);
+
             while (inBounds(currentPosition)) {
                 ChessMove newMove = new ChessMove(myPosition, currentPosition, null);
+                ChessPiece newPiece = board.getPiece(currentPosition);
+
+                if (newPiece != null) {
+                    if (newPiece.pieceColor != pieceColor) {
+                        moveList.add(newMove);
+                    }
+                    break;
+                }
+
                 moveList.add(newMove);
                 currentPosition = new ChessPosition(currentPosition.getRow() + up[i], currentPosition.getColumn() + right[i]);
             }
