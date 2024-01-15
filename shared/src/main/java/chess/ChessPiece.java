@@ -47,8 +47,8 @@ public class ChessPiece {
      * @return Boolean indicating if position array
      * is in bounds
      */
-    private boolean inBounds(int[] pos) {
-        return pos[0] >= 1 && pos[0] <= 8 && pos[1] >= 1 && pos[1] <= 8;
+    private boolean inBounds(ChessPosition pos) {
+        return pos.getRow() >= 1 && pos.getRow() <= 8 && pos.getColumn() >= 1 && pos.getColumn() <= 8;
     }
 
     /**
@@ -60,13 +60,13 @@ public class ChessPiece {
         int col = myPosition.getColumn();
         int[] up = {1, -1, -1, 1};
         int[] right = {1, 1, -1, -1};
+
         for (int i = 0; i < up.length; i++) {
-            int[] currentPosition = {row + up[i], col + right[i]};
+            ChessPosition currentPosition = new ChessPosition(row + up[i], col + right[i]);
             while (inBounds(currentPosition)) {
-                ChessPosition newPosition = new ChessPosition(currentPosition[0], currentPosition[1]);
-                ChessMove newMove = new ChessMove(myPosition, newPosition,null);
+                ChessMove newMove = new ChessMove(myPosition, currentPosition, null);
                 moveList.add(newMove);
-                currentPosition = new int[]{currentPosition[0] + up[i], currentPosition[1] + right[i]};
+                currentPosition = new ChessPosition(currentPosition.getRow() + up[i], currentPosition.getColumn() + right[i]);
             }
         }
         return moveList;
