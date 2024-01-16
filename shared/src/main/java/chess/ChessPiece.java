@@ -85,6 +85,28 @@ public class ChessPiece {
         return moveList;
     }
 
+    private Collection<ChessMove> kingMoves(ChessBoard board, ChessPosition myPosition) {
+        Collection<ChessMove> moveList = new HashSet<>();
+        int row = myPosition.getRow();
+        int col = myPosition.getColumn();
+        int[] up = {1, 1, 0, -1, -1, -1, 0, 1};
+        int[] right = {0, 1, 1, 1, 0, -1, -1, -1};
+
+        for (int i = 0; i < up.length; i++) {
+            ChessPosition currentPosition = new ChessPosition(row + up[i], col + right[i]);
+
+            if (inBounds(currentPosition)) {
+                ChessMove newMove = new ChessMove(myPosition, currentPosition, null);
+                ChessPiece newPiece = board.getPiece(currentPosition);
+
+                if ((newPiece == null) || (newPiece.pieceColor != pieceColor)) {
+                    moveList.add(newMove);
+                }
+            }
+        }
+        return moveList;
+    }
+
     /**
      * Calculates all the positions a chess piece can move to
      * Does not take into account moves that are illegal due to leaving the king in
@@ -95,11 +117,11 @@ public class ChessPiece {
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         Collection<ChessMove> moveList = new HashSet<>();
         PieceType piece = getPieceType();
-        switch(piece) {
-            case BISHOP:
-                moveList = bishopMoves(board, myPosition);
-                break;
-        }
+        moveList = switch (piece) {
+            case BISHOP -> bishopMoves(board, myPosition);
+            case KING -> kingMoves(board, myPosition);
+            default -> moveList;
+        };
         return moveList;
     }
 }
