@@ -139,6 +139,9 @@ public class ChessPiece {
         return moveList;
     }
 
+    /**
+     * @return Collection of valid moves for a pawn
+     */
     private Collection<ChessMove> pawnMoves(ChessBoard board, ChessPosition myPosition) {
         Collection<ChessMove> moveList = new HashSet<>();
         int row = myPosition.getRow();
@@ -205,6 +208,37 @@ public class ChessPiece {
     }
 
     /**
+     * @return Collection of valid moves for a queen
+     */
+    private Collection<ChessMove> queenMoves(ChessBoard board, ChessPosition myPosition) {
+        Collection<ChessMove> moveList = new HashSet<>();
+        int row = myPosition.getRow();
+        int col = myPosition.getColumn();
+        int[] up = {1, 1, 0, -1, -1, -1, 0, 1};
+        int[] right = {0, 1, 1, 1, 0, -1, -1, -1};
+
+        for (int i = 0; i < up.length; i++) {
+            ChessPosition currentPosition = new ChessPosition(row + up[i], col + right[i]);
+
+            while (inBounds(currentPosition)) {
+                ChessMove newMove = new ChessMove(myPosition, currentPosition, null);
+                ChessPiece newPiece = board.getPiece(currentPosition);
+
+                if (newPiece != null) {
+                    if (newPiece.getTeamColor() != getTeamColor()) {
+                        moveList.add(newMove);
+                    }
+                    break;
+                }
+
+                moveList.add(newMove);
+                currentPosition = new ChessPosition(currentPosition.getRow() + up[i], currentPosition.getColumn() + right[i]);
+            }
+        }
+        return moveList;
+    }
+
+    /**
      * Calculates all the positions a chess piece can move to
      * Does not take into account moves that are illegal due to leaving the king in
      * danger
@@ -219,6 +253,7 @@ public class ChessPiece {
             case KING -> kingMoves(board, myPosition);
             case KNIGHT -> knightMoves(board, myPosition);
             case PAWN -> pawnMoves(board, myPosition);
+            case QUEEN -> queenMoves(board, myPosition);
             default -> moveList;
         };
         return moveList;
