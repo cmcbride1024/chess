@@ -42,7 +42,7 @@ public class ChessBoard {
         board = new ChessPiece[8][8];
 
         // Add pawns
-        for (int col = 1; col <= 8; col++) {
+        for (int col = 1; col <= board.length; col++) {
             addPiece(new ChessPosition(2, col), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN));
             addPiece(new ChessPosition(7, col), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN));
         }
