@@ -3,6 +3,7 @@ package chess;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * For a class that can manage a chess game, making moves on a board
@@ -59,7 +60,7 @@ public class ChessGame {
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
         ChessPiece pieceToMove = getBoard().getPiece(move.getStartPosition());
-        Collection<ChessMove> validMoves = pieceToMove.pieceMoves(gameBoard, move.getStartPosition());
+        Collection<ChessMove> validMoves = pieceToMove.pieceMoves(getBoard(), move.getStartPosition());
 
         for (ChessMove validMove : validMoves) {
             System.out.println("Test case:");
@@ -75,31 +76,57 @@ public class ChessGame {
     }
 
     /**
+     *
+     * @param teamColor Color of the bishop you wish to find
+     * @return ChessPosition of the bishop's location
+     */
+    private ChessPosition getKingPosition(TeamColor teamColor) {
+        for (int i = 1; i <= 8; i++) {
+            for (int j = 1; j <= 8; j++) {
+                ChessPosition newPosition = new ChessPosition(i, j);
+                ChessPiece newPiece = getBoard().getPiece(newPosition);
+
+                if (newPiece != null && newPiece.getPieceType().equals(ChessPiece.PieceType.KING) && newPiece.getTeamColor().equals(teamColor)) {
+                    return newPosition;
+                }
+
+            }
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @param teamColor Your team's color
+     * @return A collection of the opponent's chess pieces
+     */
+    private Collection<ChessMove> getOpponentPieces(TeamColor teamColor) {
+        Collection<ChessMove> pieces = new HashSet<>();
+        for (int i = 1; i <= 8; i++) {
+            for (int j = 1; j <= 8; j++) {
+                ChessPosition newPosition = new ChessPosition(i, j);
+                ChessPiece newPiece = getBoard().getPiece(newPosition);
+
+                if (newPiece != null && !newPiece.getTeamColor().equals(teamColor)) {
+
+                    // If opponent's piece is at this location, add all that pieces legal moves
+                    pieces.addAll(newPiece.pieceMoves(getBoard(), newPosition));
+                }
+
+            }
+        }
+        return pieces;
+    }
+
+    /**
      * Determines if the given team is in check
      *
      * @param teamColor which team to check for check
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        ChessPosition kingPosition = null;
-        Collection<ChessMove> opponentMoves = new HashSet<>();
-        for (int i = 1; i <= 8; i++) {
-            for (int j = 1; j <= 8; j++) {
-
-                ChessPosition newPosition = new ChessPosition(i, j);
-                ChessPiece newPiece = getBoard().getPiece(newPosition);
-
-                if (newPiece != null) {
-
-                    if (newPiece.getTeamColor().equals(teamColor) && newPiece.getPieceType().equals(ChessPiece.PieceType.KING)) {
-                        kingPosition = newPosition;
-                    } else if (!newPiece.getTeamColor().equals(teamColor)) {
-                        Collection<ChessMove> newPieceMoves = newPiece.pieceMoves(gameBoard, newPosition);
-                        opponentMoves.addAll(newPieceMoves);
-                    }
-                }
-            }
-        }
+        ChessPosition kingPosition = getKingPosition(teamColor);
+        Collection<ChessMove> opponentMoves = getOpponentPieces(teamColor);
 
         for (ChessMove opponentMove : opponentMoves) {
             if (opponentMove.getEndPosition().equals(kingPosition)) {
@@ -117,7 +144,43 @@ public class ChessGame {
      * @return True if the specified team is in checkmate
      */
     public boolean isInCheckmate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        // King is in check
+        if (!isInCheck(teamColor)) {
+            return false;
+        }
+
+        // King cannot move out of check
+        ChessPosition kingPosition = getKingPosition(teamColor);
+        assert kingPosition != null;
+        ChessPiece king = getBoard().getPiece(kingPosition);
+        Collection<ChessMove> kingMoves = king.pieceMoves(getBoard(), kingPosition);
+
+        for (ChessMove kingMove : kingMoves) {
+            ChessBoard actualBoard = getBoard();
+            ChessPiece pieceToMove = getBoard().getPiece(kingMove.getStartPosition());
+            getBoard().addPiece(kingMove.getStartPosition(), null);
+            getBoard().addPiece(kingMove.getEndPosition(), pieceToMove);
+
+            // If the king can move out of check
+            if (!isInCheck(teamColor)) {
+                setBoard(actualBoard);
+                return false;
+            }
+
+            setBoard(actualBoard);
+        }
+
+        // Nothing can capture the piece that is checking the king
+//        Collection<ChessMove> opponentMoves = getOpponentPieces(teamColor);
+//        Collection<ChessPiece> checkingPieces = new HashSet<>();
+//        for (ChessMove opponentMove : opponentMoves) {
+//            if (opponentMove.getEndPosition().equals(kingPosition)) {
+//                checkingPieces.add(getBoard().getPiece(opponentMove.getStartPosition()));
+//            }
+//        }
+
+        // No piece can block checking pieces
+        return true;
     }
 
     /**
@@ -128,7 +191,7 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        return isInCheck(teamColor) && !isInCheckmate(teamColor);
     }
 
     /**
