@@ -55,6 +55,10 @@ public class ChessPiece {
         return ChessMoves.pieceRules(pieceType, board, myPosition);
     }
 
+    public String toString() {
+        return getTeamColor() + " " + getPieceType();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

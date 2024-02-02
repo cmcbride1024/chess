@@ -30,6 +30,10 @@ public class ChessPosition {
         return col;
     }
 
+    public String toString() {
+        return '{' + Integer.toString(getRow()) + ',' + Integer.toString(getColumn()) + '}';
+    }
+
     /**
      * Override methods for test cases
      */
