@@ -2,8 +2,6 @@ package chess;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * For a class that can manage a chess game, making moves on a board
@@ -57,6 +55,7 @@ public class ChessGame {
                 moves.add(legalMove);
             }
         }
+
         return moves;
     }
 
@@ -174,6 +173,7 @@ public class ChessGame {
         ChessBoard actualBoard = getBoard().deepCopy();
         ChessPiece pieceToMove = getBoard().getPiece(move.getStartPosition());
         boolean pieceHasMove = false;
+
         for (ChessMove possibleMove : pieceToMove.pieceMoves(getBoard(), move.getStartPosition())) {
             if (possibleMove.equals(move)) {
                 pieceHasMove = true;
