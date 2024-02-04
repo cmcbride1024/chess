@@ -64,7 +64,7 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-        if (isInCheckmate(TeamColor.WHITE) || isInCheckmate(TeamColor.BLACK)) {
+        if (isInCheckmate(TeamColor.WHITE) || isInCheckmate(TeamColor.BLACK) || isInStalemate(TeamColor.WHITE) || isInStalemate(TeamColor.BLACK)) {
             throw new InvalidMoveException("Game is over");
         }
 
