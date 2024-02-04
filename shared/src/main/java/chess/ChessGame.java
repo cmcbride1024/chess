@@ -49,12 +49,15 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        ChessPiece piece = getBoard().getPiece(startPosition);
-        if (piece != null) {
-            return piece.pieceMoves(getBoard(), startPosition);
-        }
+        Collection<ChessMove> legalMoves = getBoard().getPiece(startPosition).pieceMoves(getBoard(), startPosition);
+        Collection<ChessMove> moves = new HashSet<>();
 
-        return null;
+        for (ChessMove legalMove : legalMoves) {
+            if (isValidMove(legalMove, getBoard().getPiece(legalMove.getStartPosition()).getTeamColor())) {
+                moves.add(legalMove);
+            }
+        }
+        return moves;
     }
 
     /**
@@ -128,7 +131,8 @@ public class ChessGame {
                 if (newPiece != null && newPiece.getTeamColor().equals(teamColor)) {
 
                     // If opponent's piece is at this location, add all that pieces legal moves
-                    pieces.addAll(validMoves(newPosition));
+                    ChessPiece piece = getBoard().getPiece(newPosition);
+                    pieces.addAll(piece.pieceMoves(getBoard(), newPosition));
                 }
 
             }
@@ -170,9 +174,8 @@ public class ChessGame {
         ChessBoard actualBoard = getBoard().deepCopy();
         ChessPiece pieceToMove = getBoard().getPiece(move.getStartPosition());
         boolean pieceHasMove = false;
-
-        for (ChessMove validMove : validMoves(move.getStartPosition())) {
-            if (validMove.equals(move)) {
+        for (ChessMove possibleMove : pieceToMove.pieceMoves(getBoard(), move.getStartPosition())) {
+            if (possibleMove.equals(move)) {
                 pieceHasMove = true;
                 break;
             }
@@ -186,7 +189,7 @@ public class ChessGame {
         if (move.getPromotionPiece() != null) {
             getBoard().addPiece(move.getStartPosition(), null);
             getBoard().addPiece(move.getEndPosition(), new ChessPiece(teamColor, move.getPromotionPiece()));
-        } else if (pieceToMove != null) {
+        } else {
             getBoard().addPiece(move.getStartPosition(), null);
             getBoard().addPiece(move.getEndPosition(), pieceToMove);
         }
@@ -205,7 +208,8 @@ public class ChessGame {
 
         // King cannot move out of check
         ChessPosition kingPosition = getKingPosition(teamColor);
-        Collection<ChessMove> kingMoves = validMoves(kingPosition);
+        assert kingPosition != null;
+        Collection<ChessMove> kingMoves = getBoard().getPiece(kingPosition).pieceMoves(getBoard(), kingPosition);
         for (ChessMove kingMove : kingMoves) {
             if (isValidMove(kingMove, teamColor)) {
                 return false;
@@ -238,8 +242,8 @@ public class ChessGame {
 
         // King cannot move out of check
         ChessPosition kingPosition = getKingPosition(teamColor);
-        Collection<ChessMove> kingMoves = validMoves(kingPosition);
-
+        assert kingPosition != null;
+        Collection<ChessMove> kingMoves = getBoard().getPiece(kingPosition).pieceMoves(getBoard(), kingPosition);
         for (ChessMove kingMove : kingMoves) {
             if (isValidMove(kingMove, teamColor)) {
                 return false;
