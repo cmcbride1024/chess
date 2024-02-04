@@ -31,7 +31,7 @@ public class ChessPosition {
     }
 
     public String toString() {
-        return '{' + Integer.toString(getRow()) + ',' + Integer.toString(getColumn()) + '}';
+        return '{' + Integer.toString(getRow()) + ',' + getColumn() + '}';
     }
 
     /**

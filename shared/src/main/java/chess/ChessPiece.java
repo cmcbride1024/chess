@@ -52,7 +52,7 @@ public class ChessPiece {
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         PieceType pieceType = getPieceType();
-        return ChessMoves.pieceRules(pieceType, board, myPosition);
+        return ChessRules.pieceRules(pieceType, board, myPosition);
     }
 
     public String toString() {

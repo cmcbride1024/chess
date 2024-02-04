@@ -3,7 +3,7 @@ package chess;
 import java.util.Collection;
 import java.util.HashSet;
 
-public class ChessMoves {
+public class ChessRules {
     public static Collection<ChessMove> pieceRules(ChessPiece.PieceType pieceType, ChessBoard board, ChessPosition myPosition) {
         int[] up = null, right = null;
         boolean keepsMoving = false, pawnMoves = false;
