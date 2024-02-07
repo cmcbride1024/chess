@@ -59,6 +59,10 @@ public class ChessGame {
         return moves;
     }
 
+    private boolean moveIsInCheck(ChessMove move, ChessBoard board) {
+
+    }
+
     /**
      * Makes a move in a chess game
      *
