@@ -12,6 +12,10 @@ import java.util.HashSet;
 public class ChessGame {
     private TeamColor teamTurn = TeamColor.WHITE;
     private ChessBoard gameBoard = new ChessBoard();
+    private boolean whiteKingMoved = false, blackKingMoved = false, whiteRookMoved = false, blackRookMoved = false;
+    private boolean canEnPassant = false;
+    private ChessPosition enPassantPiece = null;
+
     public ChessGame() {
     }
 
@@ -53,6 +57,19 @@ public class ChessGame {
         for (ChessMove legalMove : legalMoves) {
             if (isValidMove(legalMove, getBoard().getPiece(legalMove.getStartPosition()).getTeamColor())) {
                 moves.add(legalMove);
+            }
+        }
+
+        ChessPiece piece = getBoard().getPiece(startPosition);
+        TeamColor teamColor = piece.getTeamColor();
+        if (piece.getPieceType().equals(ChessPiece.PieceType.KING)) {
+            int row = (teamColor == TeamColor.WHITE ? 1 : 8);
+            if (canCastleKingside(teamColor)) {
+                moves.add(new ChessMove(startPosition, new ChessPosition(row, 7), null));
+            }
+
+            if (canCastleQueenside(teamColor)) {
+                moves.add(new ChessMove(startPosition, new ChessPosition(row, 3), null));
             }
         }
 
@@ -98,6 +115,104 @@ public class ChessGame {
         return false;
     }
 
+    private boolean kingRookMoved(TeamColor teamColor) {
+        return (teamColor == TeamColor.WHITE ? whiteKingMoved && whiteRookMoved : blackKingMoved && blackRookMoved);
+    }
+
+    public boolean canCastleKingside(TeamColor teamColor) {
+        if (isInCheck(teamColor)) {
+            return false;
+        }
+
+        int row = (teamColor == TeamColor.WHITE ? 1 : 8);
+        ChessPosition kingPosition = new ChessPosition(row, 5);
+        ChessPosition rookPosition = new ChessPosition(row, 8);
+
+        // King and rook have not moved
+        if (kingRookMoved(teamColor)) {
+            return false;
+        }
+
+        // Pieces between king and rook are empty
+        for (int col = kingPosition.getColumn() + 1; col < rookPosition.getColumn(); col++) {
+            if (getBoard().getPiece(new ChessPosition(row, col)) != null) {
+                return false;
+            }
+        }
+
+        for (int col = kingPosition.getColumn(); col <= kingPosition.getColumn() + 2; col++) {
+            if (movePutsKingInCheck(new ChessPosition(row, col), teamColor)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public boolean canCastleQueenside(TeamColor teamColor) {
+        if (isInCheck(teamColor)) {
+            return false;
+        }
+
+        int row = (teamColor == TeamColor.WHITE ? 1 : 8);
+        ChessPosition kingPosition = new ChessPosition(row, 5);
+        ChessPosition rookPosition = new ChessPosition(row, 1);
+
+        // King and rook have not moved
+        if (kingRookMoved(teamColor)) {
+            return false;
+        }
+
+        // Pieces between king and rook are empty
+        for (int col = kingPosition.getColumn() + 1; col < rookPosition.getColumn(); col++) {
+            if (getBoard().getPiece(new ChessPosition(row, col)) != null) {
+                return false;
+            }
+        }
+
+        // King does not move through or into check
+        for (int col = kingPosition.getColumn(); col <= kingPosition.getColumn() + 2; col++) {
+            if (movePutsKingInCheck(new ChessPosition(row, col), teamColor)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean movePutsKingInCheck(ChessPosition position, TeamColor teamColor) {
+        ChessBoard testBoard = getBoard().deepCopy();
+        testBoard.addPiece(position, new ChessPiece(teamColor, ChessPiece.PieceType.KING));
+        return moveIsInCheck(teamColor, testBoard);
+    }
+
+    private void castleKingside(TeamColor teamColor) throws InvalidMoveException {
+        if (!canCastleKingside(teamColor)) {
+            throw new InvalidMoveException("Cannot castle kingside");
+        }
+
+        int row = (teamColor == TeamColor.WHITE ? 1 : 8);
+
+        getBoard().addPiece(new ChessPosition(row, 5), null);
+        getBoard().addPiece(new ChessPosition(row, 7), new ChessPiece(teamColor, ChessPiece.PieceType.KING));
+
+        getBoard().addPiece(new ChessPosition(row, 8), null);
+        getBoard().addPiece(new ChessPosition(row, 6), new ChessPiece(teamColor, ChessPiece.PieceType.ROOK));
+    }
+
+    private void castleQueenside(TeamColor teamColor) throws InvalidMoveException {
+        if (!canCastleQueenside(teamColor)) {
+            throw new InvalidMoveException("Cannot castle queenside");
+        }
+
+        int row = (teamColor == TeamColor.WHITE ? 1 : 8);
+
+        getBoard().addPiece(new ChessPosition(row, 5), null);
+        getBoard().addPiece(new ChessPosition(row, 3), new ChessPiece(teamColor, ChessPiece.PieceType.KING));
+
+        getBoard().addPiece(new ChessPosition(row, 1), null);
+        getBoard().addPiece(new ChessPosition(row, 4), new ChessPiece(teamColor, ChessPiece.PieceType.ROOK));
+    }
+
     /**
      * Makes a move in a chess game
      *
@@ -115,12 +230,25 @@ public class ChessGame {
             throw new InvalidMoveException("No piece at starting position.");
         }
 
-        if (pieceToMove.getTeamColor() != getTeamTurn()) {
+        TeamColor pieceColor = pieceToMove.getTeamColor();
+
+        if (pieceColor != getTeamTurn()) {
             throw new InvalidMoveException("Move is played out of turn");
         }
 
+        // Throws an error if a given move isn't valid
         if (!isValidMove(move, getTeamTurn())) {
-            throw new InvalidMoveException("Illegal move.");
+            int row = (pieceColor == TeamColor.WHITE ? 1 : 8);
+            ChessMove castleKingside = new ChessMove(new ChessPosition(row, 5), new ChessPosition(row, 7), null);
+            ChessMove castleQueenside = new ChessMove(new ChessPosition(row, 5), new ChessPosition(row, 3), null);
+
+            if (canCastleKingside(pieceColor) && move.equals(castleKingside)) {
+                castleKingside(pieceColor);
+            } else if (canCastleQueenside(pieceColor) && move.equals(castleQueenside)) {
+                castleQueenside(pieceColor);
+            } else {
+                throw new InvalidMoveException("Illegal move.");
+            }
         }
 
         // Simulate to see if a given move is legal
@@ -129,6 +257,18 @@ public class ChessGame {
             getBoard().addPiece(move.getEndPosition(), new ChessPiece(getTeamTurn(), move.getPromotionPiece()));
         } else {
             getBoard().addPiece(move.getEndPosition(), pieceToMove);
+        }
+
+        if (pieceToMove.getPieceType().equals(ChessPiece.PieceType.KING)) {
+            switch(pieceToMove.getTeamColor()) {
+                case WHITE -> whiteKingMoved = true;
+                case BLACK -> blackKingMoved = true;
+            }
+        } else if (pieceToMove.getPieceType().equals(ChessPiece.PieceType.ROOK)) {
+            switch(pieceToMove.getTeamColor()) {
+                case WHITE -> whiteRookMoved = true;
+                case BLACK -> blackRookMoved = true;
+            }
         }
 
         setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE);
