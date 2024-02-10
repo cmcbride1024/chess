@@ -59,9 +59,16 @@ public class ChessGame {
         return moves;
     }
 
-    private boolean moveIsInCheck(ChessMove move, ChessBoard board) {
+    /**
+     * Method that determines whether a move performed on a test board
+     * puts a team in check or not
+     *
+     * @param color teamColor that performs the move
+     * @param board A test board which where a move has been performed
+     * @return boolean whether the color is in check
+     */
+    private boolean moveIsInCheck(TeamColor color, ChessBoard board) {
         ChessPosition kingPosition = null;
-        TeamColor color = board.getPiece(move.getEndPosition()).getTeamColor();
         Collection<ChessMove> opponentMoves = new HashSet<>();
 
         for (int i = 1; i <= 8; i++) {
@@ -217,34 +224,39 @@ public class ChessGame {
             testBoard.addPiece(move.getEndPosition(), pieceToMove);
         }
 
-        return !moveIsInCheck(move, testBoard);
+        return !moveIsInCheck(pieceToMove.getTeamColor(), testBoard);
     }
 
+    /**
+     * Determines if a team has no legal moves
+     *
+     * @param teamColor which team to check for valid moves
+     * @return boolean if team has no valid move
+     */
+    private boolean teamHasNoValidMove(TeamColor teamColor) {
+        for (ChessMove possibleMove : getBoardMoves(teamColor)) {
+            if (isValidMove(possibleMove, teamColor)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Determines if the given team is in checkmate, which here is defined as having
+     * no valid moves and in check
+     *
+     * @param teamColor which team to check for checkmate
+     * @return True if the specified team is in checkmate, otherwise false
+     */
     public boolean isInCheckmate(TeamColor teamColor) {
         // King is in check
         if (!isInCheck(teamColor)) {
             return false;
         }
 
-        // King cannot move out of check
-        ChessPosition kingPosition = getKingPosition(teamColor);
-        assert kingPosition != null;
-        Collection<ChessMove> kingMoves = getBoard().getPiece(kingPosition).pieceMoves(getBoard(), kingPosition);
-        for (ChessMove kingMove : kingMoves) {
-            if (isValidMove(kingMove, teamColor)) {
-                return false;
-            }
-        }
-
-        // Other pieces cannot block or capture the checking piece(s)
-        Collection<ChessMove> ourMoves = getBoardMoves(teamColor);
-        for (ChessMove move : ourMoves) {
-            if (isValidMove(move, teamColor)) {
-                return false;
-            }
-        }
-
-        return true;
+        return teamHasNoValidMove(teamColor);
     }
 
     /**
@@ -255,30 +267,12 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
-        // King is in check
+        // King is not in check
         if (isInCheck(teamColor)) {
             return false;
         }
 
-        // King cannot move out of check
-        ChessPosition kingPosition = getKingPosition(teamColor);
-        assert kingPosition != null;
-        Collection<ChessMove> kingMoves = getBoard().getPiece(kingPosition).pieceMoves(getBoard(), kingPosition);
-        for (ChessMove kingMove : kingMoves) {
-            if (isValidMove(kingMove, teamColor)) {
-                return false;
-            }
-        }
-
-        // Other pieces cannot block or capture the checking piece(s)
-        Collection<ChessMove> ourMoves = getBoardMoves(teamColor);
-        for (ChessMove move : ourMoves) {
-            if (isValidMove(move, teamColor)) {
-                return false;
-            }
-        }
-
-        return true;
+        return teamHasNoValidMove(teamColor);
     }
 
     /**
