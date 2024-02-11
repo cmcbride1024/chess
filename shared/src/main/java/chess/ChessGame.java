@@ -12,7 +12,8 @@ import java.util.HashSet;
 public class ChessGame {
     private TeamColor teamTurn = TeamColor.WHITE;
     private ChessBoard gameBoard = new ChessBoard();
-    private boolean whiteKingMoved = false, blackKingMoved = false, whiteRookMoved = false, blackRookMoved = false;
+    private boolean whiteKingMoved = false, blackKingMoved = false;
+    private boolean whiteQueenRookMoved = false, whiteKingRookMoved = false, blackQueenRookMoved = false, blackKingRookMoved = false;
     private boolean canEnPassant = false;
     private ChessPosition enPassantPiece = null;
 
@@ -115,8 +116,27 @@ public class ChessGame {
         return false;
     }
 
-    private boolean kingRookMoved(TeamColor teamColor) {
-        return (teamColor == TeamColor.WHITE ? whiteKingMoved && whiteRookMoved : blackKingMoved && blackRookMoved);
+    private boolean kingRookMoved(TeamColor teamColor, int rookFile) {
+        if (rookFile == 1) {
+           switch (teamColor) {
+               case WHITE -> {
+                   return whiteQueenRookMoved || whiteKingMoved;
+               }
+               case BLACK -> {
+                   return blackQueenRookMoved || blackKingMoved;
+               }
+           }
+       } else if (rookFile == 8) {
+           switch (teamColor) {
+               case WHITE -> {
+                   return whiteKingRookMoved || whiteKingMoved;
+               }
+               case BLACK -> {
+                   return blackKingRookMoved || blackKingMoved;
+               }
+           }
+       }
+       return false;
     }
 
     public boolean canCastleKingside(TeamColor teamColor) {
@@ -128,8 +148,9 @@ public class ChessGame {
         ChessPosition kingPosition = new ChessPosition(row, 5);
         ChessPosition rookPosition = new ChessPosition(row, 8);
 
+
         // King and rook have not moved
-        if (kingRookMoved(teamColor)) {
+        if (kingRookMoved(teamColor, 8)) {
             return false;
         }
 
@@ -140,17 +161,18 @@ public class ChessGame {
             }
         }
 
+        // The king can't move through check
         for (int col = kingPosition.getColumn(); col <= kingPosition.getColumn() + 2; col++) {
             if (movePutsKingInCheck(new ChessPosition(row, col), teamColor)) {
                 return false;
             }
         }
-
         return true;
     }
 
     public boolean canCastleQueenside(TeamColor teamColor) {
         if (isInCheck(teamColor)) {
+
             return false;
         }
 
@@ -159,7 +181,7 @@ public class ChessGame {
         ChessPosition rookPosition = new ChessPosition(row, 1);
 
         // King and rook have not moved
-        if (kingRookMoved(teamColor)) {
+        if (kingRookMoved(teamColor, 1)) {
             return false;
         }
 
@@ -171,7 +193,7 @@ public class ChessGame {
         }
 
         // King does not move through or into check
-        for (int col = kingPosition.getColumn(); col <= kingPosition.getColumn() + 2; col++) {
+        for (int col = kingPosition.getColumn(); col >= kingPosition.getColumn() - 2; col--) {
             if (movePutsKingInCheck(new ChessPosition(row, col), teamColor)) {
                 return false;
             }
@@ -249,27 +271,41 @@ public class ChessGame {
             } else {
                 throw new InvalidMoveException("Illegal move.");
             }
-        }
-
-        // Simulate to see if a given move is legal
-        getBoard().addPiece(move.getStartPosition(), null);
-        if (move.getPromotionPiece() != null) {
-            getBoard().addPiece(move.getEndPosition(), new ChessPiece(getTeamTurn(), move.getPromotionPiece()));
         } else {
-            getBoard().addPiece(move.getEndPosition(), pieceToMove);
+            getBoard().addPiece(move.getStartPosition(), null);
+            if (move.getPromotionPiece() != null) {
+                getBoard().addPiece(move.getEndPosition(), new ChessPiece(getTeamTurn(), move.getPromotionPiece()));
+            } else {
+                getBoard().addPiece(move.getEndPosition(), pieceToMove);
+            }
         }
 
-        if (pieceToMove.getPieceType().equals(ChessPiece.PieceType.KING)) {
-            switch(pieceToMove.getTeamColor()) {
-                case WHITE -> whiteKingMoved = true;
-                case BLACK -> blackKingMoved = true;
+        if (pieceToMove.getTeamColor().equals(TeamColor.WHITE)) {
+            if (pieceToMove.getPieceType().equals(ChessPiece.PieceType.ROOK)) {
+                if (!whiteQueenRookMoved && move.getStartPosition().getColumn() == 1) {
+                    whiteQueenRookMoved = true;
+                } else if (!whiteKingRookMoved && move.getStartPosition().getColumn() == 8) {
+                    whiteKingRookMoved = true;
+                }
+            } else if (pieceToMove.getPieceType().equals(ChessPiece.PieceType.KING)) {
+                if (!whiteKingMoved) {
+                    whiteKingMoved = true;
+                }
             }
-        } else if (pieceToMove.getPieceType().equals(ChessPiece.PieceType.ROOK)) {
-            switch(pieceToMove.getTeamColor()) {
-                case WHITE -> whiteRookMoved = true;
-                case BLACK -> blackRookMoved = true;
+        } else {
+            if (pieceToMove.getPieceType().equals(ChessPiece.PieceType.ROOK)) {
+                if (!blackQueenRookMoved && move.getStartPosition().getColumn() == 1) {
+                    blackQueenRookMoved = true;
+                } else if (!blackKingRookMoved && move.getStartPosition().getColumn() == 8) {
+                    blackKingRookMoved = true;
+                }
+            } else if (pieceToMove.getPieceType().equals(ChessPiece.PieceType.KING)) {
+                if (!blackKingMoved) {
+                    blackKingMoved = true;
+                }
             }
         }
+
 
         setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE);
     }
@@ -421,6 +457,9 @@ public class ChessGame {
      * @param board the new board to use
      */
     public void setBoard(ChessBoard board) {
+        whiteKingMoved = blackKingMoved = whiteQueenRookMoved = whiteKingRookMoved = blackQueenRookMoved = blackKingRookMoved = false;
+        canEnPassant = false;
+        enPassantPiece = null;
         gameBoard = board;
     }
 
