@@ -164,7 +164,7 @@ public class ChessGame {
         }
 
         // Pieces between king and rook are empty
-        for (int col = kingPosition.getColumn() + 1; col < rookPosition.getColumn(); col++) {
+        for (int col = kingPosition.getColumn() - 1; col > rookPosition.getColumn(); col--) {
             if (getBoard().getPiece(new ChessPosition(row, col)) != null) {
                 return false;
             }
