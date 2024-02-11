@@ -65,11 +65,11 @@ public class ChessGame {
         TeamColor teamColor = piece.getTeamColor();
         if (piece.getPieceType().equals(ChessPiece.PieceType.KING)) {
             int row = (teamColor == TeamColor.WHITE ? 1 : 8);
-            if (canCastleKingside(teamColor)) {
+            if (startPosition.getRow() == row && canCastleKingside(teamColor)) {
                 moves.add(new ChessMove(startPosition, new ChessPosition(row, 7), null));
             }
 
-            if (canCastleQueenside(teamColor)) {
+            if (startPosition.getRow() == row && canCastleQueenside(teamColor)) {
                 moves.add(new ChessMove(startPosition, new ChessPosition(row, 3), null));
             }
         }
