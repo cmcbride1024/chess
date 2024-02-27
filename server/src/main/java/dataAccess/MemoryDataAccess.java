@@ -4,58 +4,65 @@ import model.AuthData;
 import model.GameData;
 import model.UserData;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Collection;
+import java.util.UUID;
 
-public class MemoryDataAccess {
-    void createUser(UserData u) throws DataAccessException {
+public class MemoryDataAccess implements DataAccess {
+    private int nextId = 1;
+    private final HashMap<Integer, UserData> users = new HashMap<>();
+
+    public UserData createUser(UserData u) {
+        var user = new UserData(u.username(), u.password(), u.email());
+        users.put(nextId++, user);
+
+        return user;
+    }
+
+    public void createAuth(UserData u) {
+    }
+
+    public void createGameID(GameData g) {
 
     }
 
-    void createAuth(UserData u) throws DataAccessException {
+    public void createGame(GameData g) {
 
     }
 
-    void createGameID(GameData g) throws  DataAccessException {
-
-    }
-
-    void createGame(GameData g) throws  DataAccessException {
-
-    }
-
-    UserData getUser(String username) throws DataAccessException  {
+    public UserData getUser(String username) {
         return null;
     }
 
-    AuthData getAuth(String authToken) throws DataAccessException  {
+    public AuthData getAuth(String authToken) {
         return null;
     }
 
-    HashSet<GameData> getGames() throws DataAccessException  {
+    public Collection<GameData> getGames() {
         return new HashSet<>();
     }
 
-    GameData getGame(String gameName) throws DataAccessException  {
+    public GameData getGame(String gameName) {
         return null;
     }
 
-    void deleteAuth(String username) throws DataAccessException {
+    public void deleteAuth(String username) {
         return;
     }
 
-    void joinGame(String username, String playerColor, int gameID) throws DataAccessException {
+    public void joinGame(String username, String playerColor, int gameID) {
         return;
     }
 
-    void clearUsers() throws DataAccessException {
+    public void clearUsers() {
         return;
     }
 
-    void clearGames() throws DataAccessException {
+    public void clearGames() {
         return;
     }
 
-    void clearAuthTokens() throws DataAccessException {
+    public void clearAuthTokens() {
         return;
     }
 }

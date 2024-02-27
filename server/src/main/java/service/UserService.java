@@ -11,6 +11,6 @@ public class UserService {
         return null;
     }
     public void logout(UserData user) {
-
+        return;
     }
 }
