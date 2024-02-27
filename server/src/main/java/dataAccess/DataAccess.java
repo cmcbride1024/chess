@@ -10,11 +10,11 @@ import java.util.Collection;
 public interface DataAccess {
     UserData createUser(UserData u) throws DataAccessException;
 
-    void createAuth(UserData u) throws DataAccessException;
+    AuthData createAuth(UserData u) throws DataAccessException;
 
-    void createGameID(GameData g) throws  DataAccessException;
+    Integer createGameId(String gameName) throws  DataAccessException;
 
-    void createGame(GameData g) throws  DataAccessException;
+    Integer createGame(GameData g) throws  DataAccessException;
 
     UserData getUser(String username) throws DataAccessException;
 
