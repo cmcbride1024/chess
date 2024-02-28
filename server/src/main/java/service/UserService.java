@@ -1,6 +1,5 @@
 package service;
 
-import dataAccess.DataAccess;
 import dataAccess.DataAccessException;
 import dataAccess.MemoryDataAccess;
 import model.AuthData;
@@ -13,9 +12,17 @@ public class UserService {
         this.dataAccess = dataAccess;
     }
 
-    public AuthData register(UserData user) {
-        return null;
+    public AuthData register(UserData user) throws DataAccessException {
+        var existingUser = dataAccess.getUser(user.username());
+
+        if (existingUser == null) {
+            dataAccess.createUser(user);
+            return dataAccess.createAuth(user);
+        } else {
+            throw new DataAccessException("Username already exists in the database.");
+        }
     }
+
     public AuthData login(UserData user) {
         return null;
     }

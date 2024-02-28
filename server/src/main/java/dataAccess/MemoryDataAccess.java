@@ -5,6 +5,7 @@ import model.AuthData;
 import model.GameData;
 import model.UserData;
 
+import javax.xml.crypto.Data;
 import java.util.*;
 
 import static chess.ChessGame.TeamColor.WHITE;
@@ -44,7 +45,7 @@ public class MemoryDataAccess implements DataAccess {
         return g.gameID();
     }
 
-    public UserData getUser(String username) {
+    public UserData getUser(String username) throws DataAccessException {
         for (UserData user : users.values()) {
             if (user.username().equals(username)) {
                 return user;
