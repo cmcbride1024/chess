@@ -54,6 +54,10 @@ public class MemoryDataAccess implements DataAccess {
         return null;
     }
 
+    public HashMap<Integer, UserData> getUsers() {
+        return users;
+    }
+
     public AuthData getAuth(String authToken) {
         for (AuthData auth : authTokens.values()) {
             if (auth.authToken().equals(authToken)) {
@@ -62,6 +66,10 @@ public class MemoryDataAccess implements DataAccess {
         }
 
         return null;
+    }
+
+    public HashMap<UserData, AuthData> getAuths() {
+        return authTokens;
     }
 
     public Collection<GameData> getGames() {
