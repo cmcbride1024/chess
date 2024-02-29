@@ -1,40 +1,44 @@
 package dataAccess;
 
-import chess.ChessGame;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
 
-import javax.xml.crypto.Data;
 import java.util.*;
 
-import static chess.ChessGame.TeamColor.WHITE;
-
 public class MemoryDataAccess implements DataAccess {
-    private int userId = 1;
-    private int gameId = 1;
+    private int userId = 0;
+    private int gameId = 0;
     private final HashMap<Integer, UserData> users = new HashMap<>();
-    private final HashMap<UserData, AuthData> authTokens = new HashMap<>();
+    private final HashMap<UserData, List<AuthData>> authTokens = new HashMap<>();
     private final HashMap<String, Integer> gameIds = new HashMap<>();
     private final HashSet<GameData> games = new HashSet<>();
 
-    public UserData createUser(UserData u) {
-        var user = new UserData(u.username(), u.password(), u.email());
-        users.put(userId++, user);
+    public UserData createUser(UserData userData) {
+        var user = new UserData(userData.username(), userData.password(), userData.email());
+        users.put(++userId, user);
 
         return user;
     }
 
-    public AuthData createAuth(UserData u) {
-        String newUuid = UUID.randomUUID().toString();
-        var newAuthToken = new AuthData(newUuid, u.username());
-        authTokens.put(u, newAuthToken);
+    public AuthData createAuth(UserData user) {
+        String newUUID = UUID.randomUUID().toString();
+        List<AuthData> userAuths = authTokens.get(user);
 
-        return newAuthToken;
+        AuthData newAuthData = new AuthData(newUUID, user.username());
+        if (userAuths == null) {
+            userAuths = new ArrayList<>();
+            userAuths.add(newAuthData);
+            authTokens.put(user, userAuths);
+        } else {
+            userAuths.add(newAuthData);
+        }
+
+        return newAuthData;
     }
 
     public Integer createGameId(String gameName) {
-        gameIds.put(gameName, gameId++);
+        gameIds.put(gameName, ++gameId);
 
         return gameId;
     }
@@ -60,16 +64,20 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     public AuthData getAuth(String authToken) {
-        for (AuthData auth : authTokens.values()) {
-            if (auth.authToken().equals(authToken)) {
-                return auth;
+        for (Map.Entry<UserData, List<AuthData>> entry : authTokens.entrySet()) {
+            List<AuthData> authList = entry.getValue();
+
+            for (AuthData auth : authList) {
+                if (auth.authToken().equals(authToken)) {
+                    return auth;
+                }
             }
         }
 
         return null;
     }
 
-    public HashMap<UserData, AuthData> getAuths() {
+    public HashMap<UserData, List<AuthData>> getAuths() {
         return authTokens;
     }
 
@@ -87,12 +95,21 @@ public class MemoryDataAccess implements DataAccess {
         return null;
     }
 
-    public void deleteAuth(AuthData auth) {
-        for (Map.Entry<UserData, AuthData> entry : authTokens.entrySet()) {
-            AuthData mapAuth = entry.getValue();
-            if (mapAuth.authToken().equals(auth.authToken())) {
-                UserData user = entry.getKey();
-                authTokens.remove(user);
+    public void deleteAuth(AuthData authToken) {
+        for (Map.Entry<UserData, List<AuthData>> entry : authTokens.entrySet()) {
+            List<AuthData> authList = entry.getValue();
+
+            for (AuthData auth : authList) {
+                if (auth.equals(authToken)) {
+
+                    if (authList.size() == 1) {
+                        authTokens.remove(entry.getKey());
+                        break;
+                    } else {
+                        authList.remove(auth);
+                        break;
+                    }
+                }
             }
         }
     }

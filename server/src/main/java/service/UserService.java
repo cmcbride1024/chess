@@ -78,7 +78,6 @@ public class UserService {
         }
 
         var username = dataAccess.getAuth(authToken).username();
-
         dataAccess.joinGame(username, playerColor, gameID);
     }
 

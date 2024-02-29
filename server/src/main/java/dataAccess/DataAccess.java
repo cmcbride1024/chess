@@ -4,10 +4,9 @@ import model.AuthData;
 import model.GameData;
 import model.UserData;
 
-import javax.xml.crypto.Data;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Collection;
+import java.util.List;
 
 public interface DataAccess {
     UserData createUser(UserData u) throws DataAccessException;
@@ -24,7 +23,7 @@ public interface DataAccess {
 
     AuthData getAuth(String authToken) throws DataAccessException;
 
-    HashMap<UserData, AuthData> getAuths() throws DataAccessException;
+    HashMap<UserData, List<AuthData>> getAuths() throws DataAccessException;
 
     Collection<GameData> getGames() throws DataAccessException;
 

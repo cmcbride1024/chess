@@ -80,7 +80,7 @@ public class Server {
             res.status(200);
             return gson.toJson(auth);
 
-        } catch (UnauthorizedException u) {
+        } catch (UnauthorizedException | DataAccessException e) {
             res.status(401);
             return gson.toJson(new JsonMessage("Error: unauthorized"));
 
