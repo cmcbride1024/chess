@@ -61,7 +61,6 @@ public class MemoryDataAccess implements DataAccess {
 
     public AuthData getAuth(String authToken) {
         for (AuthData auth : authTokens.values()) {
-            System.out.println(auth.authToken());
             if (auth.authToken().equals(authToken)) {
                 return auth;
             }

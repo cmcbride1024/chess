@@ -1,7 +1,6 @@
 package serviceTests;
 
 import chess.ChessGame;
-import dataAccess.DataAccess;
 import dataAccess.DataAccessException;
 import dataAccess.MemoryDataAccess;
 import model.UserData;
@@ -10,8 +9,6 @@ import model.GameData;
 import org.junit.jupiter.api.Test;
 import service.UserService;
 
-import javax.xml.crypto.Data;
-import java.util.Collection;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -138,21 +135,43 @@ public class DataAccessTest {
 
     @Test
     void joinGame() throws DataAccessException {
+        UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
+        AuthData testAuth = service.register(testUser);
 
+        service.createGame(testAuth, "game1");
+        service.joinGame(testAuth, "WHITE", 1);
     }
 
     @Test
     void joinGameNotAuthorized() throws DataAccessException {
+        try {
+            var testAuth = new AuthData(UUID.randomUUID().toString(), "carlos");
+            service.createGame(testAuth, "game1");
+            service.joinGame(testAuth, "WHITE", 1);
 
+            fail("Service shouldn't allow user to join game who isn't logged in.");
+        } catch (DataAccessException e) {
+            assertEquals(0, dataAccess.getGames().size());
+        }
     }
 
     @Test
     void joinGameWrongID() throws DataAccessException {
+        try {
+            UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
+            AuthData testAuth = service.register(testUser);
 
+            service.createGame(testAuth, "game1");
+            service.joinGame(testAuth, "BLACK", 2);
+
+            fail("Service shouldn't allow user to join game with invalid ID.");
+        } catch (DataAccessException e) {
+            assertEquals(1, dataAccess.getGames().size());
+        }
     }
 
     @Test
-    void clearApplication() throws DataAccessException {
+    void clearApplication() {
         UserData testUser = new UserData("steve01", "password", "steve@gmail.com");
         dataAccess.createUser(testUser);
         dataAccess.createAuth(testUser);

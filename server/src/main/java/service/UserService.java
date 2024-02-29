@@ -53,7 +53,7 @@ public class UserService {
         return dataAccess.getGames();
     }
 
-    public void createGame(AuthData authToken, String gameName) throws DataAccessException {
+    public int createGame(AuthData authToken, String gameName) throws DataAccessException {
         if (!dataAccess.getAuths().containsValue(authToken)) {
             throw new DataAccessException("User is not registered with the system.");
         }
@@ -61,13 +61,21 @@ public class UserService {
         int newGameID = dataAccess.createGameId(gameName);
         var game = new ChessGame();
         dataAccess.createGame(new GameData(newGameID, null, null, gameName, game));
+
+        return newGameID;
     }
 
     public void joinGame(AuthData authToken, String playerColor, Integer gameID) throws DataAccessException {
+        if (!dataAccess.getAuths().containsValue(authToken)) {
+            throw new DataAccessException("User is not registered with the system.");
+        }
 
+        var username = dataAccess.getAuth(authToken.authToken()).username();
+
+        dataAccess.joinGame(username, playerColor, gameID);
     }
 
-    public void clearApplication() throws DataAccessException {
+    public void clearApplication() {
         dataAccess.clearUsers();
         dataAccess.clearGames();
         dataAccess.clearAuthTokens();
