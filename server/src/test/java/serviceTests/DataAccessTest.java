@@ -3,6 +3,7 @@ package serviceTests;
 import chess.ChessGame;
 import dataAccess.DataAccessException;
 import dataAccess.MemoryDataAccess;
+import dataAccess.UnauthorizedException;
 import model.UserData;
 import model.AuthData;
 import model.GameData;
@@ -21,7 +22,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void registerUser() throws DataAccessException {
+    void registerUser() throws DataAccessException, UnauthorizedException {
         UserData testUser = new UserData("stevejobs", "apple", "steve@icloud.com");
 
         AuthData authData = service.register(testUser);
@@ -33,25 +34,25 @@ public class DataAccessTest {
     }
 
     @Test
-    void registerExistingUser() throws DataAccessException {
+    void registerExistingUser() throws DataAccessException, UnauthorizedException {
         UserData testUser = new UserData("stevejobs", "apple", "steve@icloud.com");
         service.register(testUser);
 
         try {
             service.register(testUser);
             fail("Service registered an existing user");
-        } catch (DataAccessException e) {
+        } catch (UnauthorizedException e) {
             assertEquals(1, dataAccess.getUsers().size());
             assertEquals(1, dataAccess.getAuths().size());
         }
     }
 
     @Test
-    void loginUser() throws DataAccessException {
+    void loginUser() throws DataAccessException, UnauthorizedException {
         UserData testUser = new UserData("lebron", "leking", "lebron@aol.com");
         service.register(testUser);
 
-        AuthData authData = service.login(testUser);
+        AuthData authData = service.login(testUser.username(), testUser.password());
         assertEquals(1, dataAccess.getAuths().size());
         assertTrue(dataAccess.getAuths().containsValue(authData));
     }
@@ -62,63 +63,63 @@ public class DataAccessTest {
         UserData testUser = new UserData("lebron", "leking", "lebron@aol.com");
 
         try {
-            service.login(testUser);
+            service.login(testUser.username(), testUser.password());
             fail("User has not been registered first.");
-        } catch (DataAccessException e) {
+        } catch (UnauthorizedException e) {
             assertEquals(0, dataAccess.getAuths().size());
         }
     }
 
     @Test
-    void logoutUser() throws DataAccessException {
+    void logoutUser() throws DataAccessException, UnauthorizedException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         service.register(testUser);
-        AuthData testAuth = service.login(testUser);
+        AuthData testAuth = service.login(testUser.username(), testUser.password());
 
-        service.logout(testAuth);
+        service.logout(testAuth.authToken());
         assertEquals(0, dataAccess.getAuths().size());
     }
 
     @Test
-    void logoutNonExistentUser() throws DataAccessException {
+    void logoutNonExistentUser() {
         try {
-            service.logout(new AuthData(UUID.randomUUID().toString(), "Bob"));
+            service.logout(UUID.randomUUID().toString());
             fail("Service shouldn't log out user who isn't logged in.");
-        } catch (DataAccessException e) {
+        } catch (UnauthorizedException e) {
             assertEquals(0, dataAccess.getAuths().size());
         }
     }
 
     @Test
-    void listGames() throws DataAccessException {
+    void listGames() throws DataAccessException, UnauthorizedException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         AuthData testAuth = service.register(testUser);
-        service.createGame(testAuth, "game1");
+        service.createGame(testAuth.authToken(), "game1");
 
         UserData testUserTwo = new UserData("lebron", "leking", "lebron@aol.com");
         AuthData testAuthTwo = service.register(testUserTwo);
-        service.createGame(testAuthTwo, "game2");
+        service.createGame(testAuthTwo.authToken(), "game2");
 
-        var gameList = service.listGames(testAuth);
+        var gameList = service.listGames(testAuth.authToken());
         assertEquals(2, gameList.size());
         assertEquals(gameList.size(), dataAccess.getGames().size());
     }
 
     @Test
-    void listGamesNotAuthorized() throws DataAccessException {
+    void listGamesNotAuthorized() {
         try {
-            service.listGames(new AuthData(UUID.randomUUID().toString(), "steve"));
+            service.listGames(UUID.randomUUID().toString());
             fail("Service shouldn't list games for user who isn't registered.");
-        } catch (DataAccessException e) {
+        } catch (UnauthorizedException e) {
             assertEquals(0, dataAccess.getAuths().size());
         }
     }
 
     @Test
-    void createGame() throws DataAccessException {
+    void createGame() throws DataAccessException, UnauthorizedException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         AuthData testAuth = service.register(testUser);
-        service.createGame(testAuth, "game1");
+        service.createGame(testAuth.authToken(), "game1");
 
         assertEquals(1, dataAccess.getGames().size());
     }
@@ -126,43 +127,42 @@ public class DataAccessTest {
     @Test
     void createGameNotAuthorized() throws DataAccessException {
         try {
-            service.createGame(new AuthData(UUID.randomUUID().toString(), "steve"), "game1");
+            service.createGame(UUID.randomUUID().toString(), "game1");
             fail("Service shouldn't log out user who isn't logged in.");
-        } catch (DataAccessException e) {
+        } catch (UnauthorizedException e) {
             assertEquals(0, dataAccess.getAuths().size());
         }
     }
 
     @Test
-    void joinGame() throws DataAccessException {
+    void joinGame() throws DataAccessException, UnauthorizedException {
         UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
         AuthData testAuth = service.register(testUser);
 
-        service.createGame(testAuth, "game1");
-        service.joinGame(testAuth, "WHITE", 1);
+        service.createGame(testAuth.authToken(), "game1");
+        service.joinGame(testAuth.authToken(), "WHITE", 1);
     }
 
     @Test
     void joinGameNotAuthorized() throws DataAccessException {
         try {
             var testAuth = new AuthData(UUID.randomUUID().toString(), "carlos");
-            service.createGame(testAuth, "game1");
-            service.joinGame(testAuth, "WHITE", 1);
+            service.createGame(testAuth.authToken(), "game1");
+            service.joinGame(testAuth.authToken(), "WHITE", 1);
 
             fail("Service shouldn't allow user to join game who isn't logged in.");
-        } catch (DataAccessException e) {
+        } catch (UnauthorizedException e) {
             assertEquals(0, dataAccess.getGames().size());
         }
     }
 
     @Test
-    void joinGameWrongID() throws DataAccessException {
+    void joinGameWrongID() throws UnauthorizedException {
         try {
             UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
             AuthData testAuth = service.register(testUser);
-
-            service.createGame(testAuth, "game1");
-            service.joinGame(testAuth, "BLACK", 2);
+            service.createGame(testAuth.authToken(), "game1");
+            service.joinGame(testAuth.authToken(), "BLACK", 2);
 
             fail("Service shouldn't allow user to join game with invalid ID.");
         } catch (DataAccessException e) {
@@ -188,7 +188,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void clearEmptyApplication() throws DataAccessException {
+    void clearEmptyApplication() {
         // Verify that database is already empty
         assertEquals(0, dataAccess.getGames().size());
         assertEquals(0, dataAccess.getAuths().size());
