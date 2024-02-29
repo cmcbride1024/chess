@@ -2,6 +2,7 @@ package service;
 
 import chess.ChessGame;
 import dataAccess.DataAccessException;
+import dataAccess.InvalidGameID;
 import dataAccess.MemoryDataAccess;
 import dataAccess.UnauthorizedException;
 import model.AuthData;
@@ -71,7 +72,7 @@ public class UserService {
         return newGameID;
     }
 
-    public void joinGame(String authToken, String playerColor, Integer gameID) throws DataAccessException, UnauthorizedException {
+    public void joinGame(String authToken, String playerColor, Integer gameID) throws DataAccessException, UnauthorizedException, InvalidGameID {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");

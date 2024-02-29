@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import dataAccess.DataAccessException;
+import dataAccess.InvalidGameID;
 import dataAccess.MemoryDataAccess;
 import dataAccess.UnauthorizedException;
 import model.*;
@@ -60,7 +61,7 @@ public class Server {
             res.status(200);
             return gson.toJson(auth);
 
-        } catch (DataAccessException d) {
+        } catch (UnauthorizedException u) {
             res.status(403);
             return gson.toJson(new JsonMessage("Error: already taken"));
 
@@ -164,15 +165,25 @@ public class Server {
         res.type("application/json");
 
         try {
-            if (!jsonObject.has("playerColor") || !jsonObject.has("gameID")) {
+            if (!jsonObject.has("gameID")) {
                 res.status(400);
                 return gson.toJson(new JsonMessage("Error: bad request"));
             }
 
-            JoinInformation join = gson.fromJson(jsonObject, JoinInformation.class);
-            service.joinGame(authToken, join.playerColor(), join.gameID());
+            if (jsonObject.has("playerColor")) {
+                JoinInformation join = gson.fromJson(jsonObject, JoinInformation.class);
+                service.joinGame(authToken, join.playerColor(), join.gameID());
+            } else {
+                GameID join = gson.fromJson(jsonObject, GameID.class);
+                service.joinGame(authToken, null, join.gameID());
+            }
+
             res.status(200);
             return "";
+
+        } catch (InvalidGameID i) {
+            res.status(400);
+            return gson.toJson(new JsonMessage("Error: bad request"));
 
         } catch (UnauthorizedException u) {
             res.status(401);
@@ -207,3 +218,4 @@ record GameName(String gameName) {}
 record GameID(Integer gameID) {}
 
 record JoinInformation(String playerColor, Integer gameID) {}
+

@@ -2,6 +2,7 @@ package serviceTests;
 
 import chess.ChessGame;
 import dataAccess.DataAccessException;
+import dataAccess.InvalidGameID;
 import dataAccess.MemoryDataAccess;
 import dataAccess.UnauthorizedException;
 import model.UserData;
@@ -135,7 +136,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void joinGame() throws DataAccessException, UnauthorizedException {
+    void joinGame() throws DataAccessException, UnauthorizedException, InvalidGameID {
         UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
         AuthData testAuth = service.register(testUser);
 
@@ -144,7 +145,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void joinGameNotAuthorized() throws DataAccessException {
+    void joinGameNotAuthorized() throws DataAccessException, InvalidGameID {
         try {
             var testAuth = new AuthData(UUID.randomUUID().toString(), "carlos");
             service.createGame(testAuth.authToken(), "game1");
@@ -157,7 +158,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void joinGameWrongID() throws UnauthorizedException {
+    void joinGameWrongID() throws UnauthorizedException, InvalidGameID {
         try {
             UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
             AuthData testAuth = service.register(testUser);
