@@ -30,7 +30,7 @@ public interface DataAccess {
 
     GameData getGame(String gameName) throws DataAccessException;
 
-    void deleteAuth(String username) throws DataAccessException;
+    void deleteAuth(AuthData auth) throws DataAccessException;
 
     void joinGame(String username, String playerColor, int gameID) throws DataAccessException;
 

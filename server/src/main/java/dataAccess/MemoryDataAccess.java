@@ -45,7 +45,7 @@ public class MemoryDataAccess implements DataAccess {
         return g.gameID();
     }
 
-    public UserData getUser(String username) throws DataAccessException {
+    public UserData getUser(String username) {
         for (UserData user : users.values()) {
             if (user.username().equals(username)) {
                 return user;
@@ -61,6 +61,7 @@ public class MemoryDataAccess implements DataAccess {
 
     public AuthData getAuth(String authToken) {
         for (AuthData auth : authTokens.values()) {
+            System.out.println(auth.authToken());
             if (auth.authToken().equals(authToken)) {
                 return auth;
             }
@@ -87,10 +88,10 @@ public class MemoryDataAccess implements DataAccess {
         return null;
     }
 
-    public void deleteAuth(String username) {
+    public void deleteAuth(AuthData auth) {
         for (Map.Entry<UserData, AuthData> entry : authTokens.entrySet()) {
-            AuthData auth = entry.getValue();
-            if (auth.username().equals(username)) {
+            AuthData mapAuth = entry.getValue();
+            if (mapAuth.authToken().equals(auth.authToken())) {
                 UserData user = entry.getKey();
                 authTokens.remove(user);
             }
