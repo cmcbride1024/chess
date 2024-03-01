@@ -18,7 +18,7 @@ public class UserService {
         this.dataAccess = dataAccess;
     }
 
-    public AuthData register(UserData user) throws DataAccessException, UnauthorizedException {
+    public AuthData register(UserData user) throws UnauthorizedException {
         var existingUser = dataAccess.getUser(user.username());
 
         if (existingUser == null) {
@@ -59,7 +59,7 @@ public class UserService {
         return dataAccess.getGames();
     }
 
-    public int createGame(String authToken, String gameName) throws DataAccessException, UnauthorizedException {
+    public int createGame(String authToken, String gameName) throws UnauthorizedException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");

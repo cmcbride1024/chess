@@ -23,7 +23,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void registerUser() throws DataAccessException, UnauthorizedException {
+    void registerUser() throws UnauthorizedException {
         UserData testUser = new UserData("stevejobs", "apple", "steve@icloud.com");
 
         AuthData authData = service.register(testUser);
@@ -31,11 +31,11 @@ public class DataAccessTest {
         assertEquals(1, users.size());
         assertTrue(users.containsValue(testUser));
         assertEquals(1, dataAccess.getAuths().size());
-        assertTrue(dataAccess.getAuths().containsValue(authData));
+        assertNotNull(dataAccess.getAuth(authData.authToken()));
     }
 
     @Test
-    void registerExistingUser() throws DataAccessException, UnauthorizedException {
+    void registerExistingUser() throws UnauthorizedException {
         UserData testUser = new UserData("stevejobs", "apple", "steve@icloud.com");
         service.register(testUser);
 
@@ -55,7 +55,7 @@ public class DataAccessTest {
 
         AuthData authData = service.login(testUser.username(), testUser.password());
         assertEquals(1, dataAccess.getAuths().size());
-        assertTrue(dataAccess.getAuths().containsValue(authData));
+        assertNotNull(dataAccess.getAuth(authData.authToken()));
     }
 
     @Test
@@ -72,10 +72,9 @@ public class DataAccessTest {
     }
 
     @Test
-    void logoutUser() throws DataAccessException, UnauthorizedException {
+    void logoutUser() throws UnauthorizedException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
-        service.register(testUser);
-        AuthData testAuth = service.login(testUser.username(), testUser.password());
+        AuthData testAuth = service.register(testUser);
 
         service.logout(testAuth.authToken());
         assertEquals(0, dataAccess.getAuths().size());
@@ -92,7 +91,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void listGames() throws DataAccessException, UnauthorizedException {
+    void listGames() throws UnauthorizedException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         AuthData testAuth = service.register(testUser);
         service.createGame(testAuth.authToken(), "game1");
@@ -117,7 +116,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void createGame() throws DataAccessException, UnauthorizedException {
+    void createGame() throws UnauthorizedException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         AuthData testAuth = service.register(testUser);
         service.createGame(testAuth.authToken(), "game1");
@@ -126,7 +125,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void createGameNotAuthorized() throws DataAccessException {
+    void createGameNotAuthorized() {
         try {
             service.createGame(UUID.randomUUID().toString(), "game1");
             fail("Service shouldn't log out user who isn't logged in.");
@@ -158,7 +157,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void joinGameWrongID() throws UnauthorizedException, InvalidGameID {
+    void joinGameWrongID() throws UnauthorizedException, DataAccessException {
         try {
             UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
             AuthData testAuth = service.register(testUser);
@@ -166,7 +165,7 @@ public class DataAccessTest {
             service.joinGame(testAuth.authToken(), "BLACK", 2);
 
             fail("Service shouldn't allow user to join game with invalid ID.");
-        } catch (DataAccessException e) {
+        } catch (InvalidGameID e) {
             assertEquals(1, dataAccess.getGames().size());
         }
     }

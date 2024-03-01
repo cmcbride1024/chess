@@ -96,21 +96,20 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     public void deleteAuth(AuthData authToken) {
-        for (Map.Entry<UserData, List<AuthData>> entry : authTokens.entrySet()) {
+        for (Map.Entry<UserData, List<AuthData>> entry : getAuths().entrySet()) {
             List<AuthData> authList = entry.getValue();
 
             for (AuthData auth : authList) {
                 if (auth.equals(authToken)) {
-
                     if (authList.size() == 1) {
                         authTokens.remove(entry.getKey());
-                        break;
                     } else {
                         authList.remove(auth);
-                        break;
                     }
+                    break;
                 }
             }
+
         }
     }
 
