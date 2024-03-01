@@ -16,7 +16,7 @@ public class MemoryDataAccess implements DataAccess {
 
     public void createUser(UserData userData) {
         var user = new UserData(userData.username(), userData.password(), userData.email());
-        users.put(++userId, user);
+        getUsers().put(++userId, user);
     }
 
     public AuthData createAuth(UserData user) {
@@ -46,7 +46,7 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     public UserData getUser(String username) {
-        for (UserData user : users.values()) {
+        for (UserData user : getUsers().values()) {
             if (user.username().equals(username)) {
                 return user;
             }
@@ -126,7 +126,7 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     public void clearUsers() {
-        users.clear();
+        getUsers().clear();
         userId = 1;
     }
 
