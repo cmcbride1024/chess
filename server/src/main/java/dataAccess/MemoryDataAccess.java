@@ -14,11 +14,9 @@ public class MemoryDataAccess implements DataAccess {
     private final HashMap<String, Integer> gameIds = new HashMap<>();
     private final HashSet<GameData> games = new HashSet<>();
 
-    public UserData createUser(UserData userData) {
+    public void createUser(UserData userData) {
         var user = new UserData(userData.username(), userData.password(), userData.email());
         users.put(++userId, user);
-
-        return user;
     }
 
     public AuthData createAuth(UserData user) {
@@ -43,10 +41,8 @@ public class MemoryDataAccess implements DataAccess {
         return gameId;
     }
 
-    public Integer createGame(GameData g) {
+    public void createGame(GameData g) {
         games.add(g);
-
-        return g.gameID();
     }
 
     public UserData getUser(String username) {
@@ -83,16 +79,6 @@ public class MemoryDataAccess implements DataAccess {
 
     public Collection<GameData> getGames() {
         return games;
-    }
-
-    public GameData getGame(String gameName) {
-        for (GameData game : games) {
-            if (game.gameName().equals(gameName)) {
-                return game;
-            }
-        }
-
-        return null;
     }
 
     public void deleteAuth(AuthData authToken) {

@@ -29,7 +29,6 @@ public class ChessGame {
 
     /**
      * Set's which teams turn it is
-     *
      * @param team the team whose turn it is
      */
     public void setTeamTurn(TeamColor team) {
@@ -46,7 +45,6 @@ public class ChessGame {
 
     /**
      * Gets a valid moves for a piece at the given location
-     *
      * @param startPosition the piece to get valid moves for
      * @return Set of valid moves for requested piece, or null if no piece at
      * startPosition
@@ -90,7 +88,6 @@ public class ChessGame {
     /**
      * Method that determines whether a move performed on a test board
      * puts a team in check or not
-     *
      * @param color teamColor that performs the move
      * @param board A test board which where a move has been performed
      * @return boolean whether the color is in check
@@ -247,7 +244,6 @@ public class ChessGame {
 
     /**
      * Makes a move in a chess game
-     *
      * @param move chess move to preform
      * @throws InvalidMoveException if move is invalid
      */
@@ -346,7 +342,7 @@ public class ChessGame {
     }
 
     /**
-     *
+     * Returns the position of the king for the specified color.
      * @param teamColor Color of the king you wish to find
      * @return ChessPosition of the king's location
      */
@@ -367,7 +363,6 @@ public class ChessGame {
 
     /**
      * Returns a collection of Chess moves for a given team color
-     *
      * @param teamColor Team color
      * @return A collection of the possible chess moves
      */
@@ -393,7 +388,6 @@ public class ChessGame {
 
     /**
      * Determines if the given team is in check
-     *
      * @param teamColor which team to check for check
      * @return True if the specified team is in check
      */
@@ -412,7 +406,6 @@ public class ChessGame {
 
     /**
      * Determines whether a hypothetical move for a team is legal
-     *
      * @param move Takes in a hypothetical move
      * @param teamColor Piece color that is moving
      * @return Boolean whether the move is valid
@@ -440,7 +433,6 @@ public class ChessGame {
 
     /**
      * Determines if a team has no legal moves
-     *
      * @param teamColor which team to check for valid moves
      * @return boolean if team has no valid move
      */
@@ -457,7 +449,6 @@ public class ChessGame {
     /**
      * Determines if the given team is in checkmate, which here is defined as having
      * no valid moves and in check
-     *
      * @param teamColor which team to check for checkmate
      * @return True if the specified team is in checkmate, otherwise false
      */
@@ -473,7 +464,6 @@ public class ChessGame {
     /**
      * Determines if the given team is in stalemate, which here is defined as having
      * no valid moves
-     *
      * @param teamColor which team to check for stalemate
      * @return True if the specified team is in stalemate, otherwise false
      */
@@ -482,13 +472,11 @@ public class ChessGame {
         if (isInCheck(teamColor)) {
             return false;
         }
-
         return teamHasNoValidMove(teamColor);
     }
 
     /**
      * Sets this game's chessboard with a given board
-     *
      * @param board the new board to use
      */
     public void setBoard(ChessBoard board) {
@@ -500,7 +488,6 @@ public class ChessGame {
 
     /**
      * Gets the current chessboard
-     *
      * @return the chessboard
      */
     public ChessBoard getBoard() {
