@@ -3,10 +3,8 @@ package server;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import dataAccess.DataAccessException;
-import dataAccess.InvalidGameID;
-import dataAccess.MemoryDataAccess;
-import dataAccess.UnauthorizedException;
+import dataAccess.*;
+import exception.ResponseException;
 import model.*;
 import service.UserService;
 import spark.*;
@@ -16,7 +14,11 @@ import java.util.HashSet;
 
 public class Server {
     private final Gson gson = new GsonBuilder().serializeNulls().create();
-    private final UserService service = new UserService(new MemoryDataAccess());
+    private final UserService service = new UserService(new MySqlDataAccess());
+
+    public Server() throws ResponseException, DataAccessException {
+    }
+
     public int run(int desiredPort) {
         Spark.port(desiredPort);
 

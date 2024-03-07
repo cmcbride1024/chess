@@ -1,10 +1,7 @@
 package service;
 
 import chess.ChessGame;
-import dataAccess.DataAccessException;
-import dataAccess.InvalidGameID;
-import dataAccess.MemoryDataAccess;
-import dataAccess.UnauthorizedException;
+import dataAccess.*;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
@@ -12,13 +9,13 @@ import model.UserData;
 import java.util.Collection;
 
 public class UserService {
-    private final MemoryDataAccess dataAccess;
+    private final DataAccess dataAccess;
 
-    public UserService(MemoryDataAccess dataAccess) {
+    public UserService(DataAccess dataAccess) {
         this.dataAccess = dataAccess;
     }
 
-    public AuthData register(UserData user) throws UnauthorizedException {
+    public AuthData register(UserData user) throws UnauthorizedException, DataAccessException {
         var existingUser = dataAccess.getUser(user.username());
 
         if (existingUser == null) {
@@ -41,7 +38,7 @@ public class UserService {
         }
     }
 
-    public void logout(String authToken) throws UnauthorizedException {
+    public void logout(String authToken) throws UnauthorizedException, DataAccessException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");
@@ -50,7 +47,7 @@ public class UserService {
         dataAccess.deleteAuth(authData);
     }
 
-    public Collection<GameData> listGames(String authToken) throws UnauthorizedException {
+    public Collection<GameData> listGames(String authToken) throws UnauthorizedException, DataAccessException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");
@@ -59,7 +56,7 @@ public class UserService {
         return dataAccess.getGames();
     }
 
-    public int createGame(String authToken, String gameName) throws UnauthorizedException {
+    public int createGame(String authToken, String gameName) throws UnauthorizedException, DataAccessException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");
@@ -82,7 +79,7 @@ public class UserService {
         dataAccess.joinGame(username, playerColor, gameID);
     }
 
-    public void clearApplication() {
+    public void clearApplication() throws DataAccessException {
         dataAccess.clearUsers();
         dataAccess.clearGames();
         dataAccess.clearAuthTokens();

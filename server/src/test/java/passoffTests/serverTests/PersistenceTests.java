@@ -1,6 +1,8 @@
 package passoffTests.serverTests;
 
 import chess.ChessGame;
+import dataAccess.DataAccessException;
+import exception.ResponseException;
 import org.junit.jupiter.api.*;
 import passoffTests.obfuscatedTestClasses.TestServerFacade;
 import passoffTests.testClasses.TestException;
@@ -21,7 +23,7 @@ public class PersistenceTests {
 
 
     @BeforeAll
-    public static void init() {
+    public static void init() throws ResponseException, DataAccessException {
         startServer();
         serverFacade.clear();
     }
@@ -31,7 +33,7 @@ public class PersistenceTests {
         server.stop();
     }
 
-    public static void startServer() {
+    public static void startServer() throws ResponseException, DataAccessException {
         server = new Server();
         var port = server.run(0);
         System.out.println("Started test HTTP server on " + port);
@@ -41,7 +43,7 @@ public class PersistenceTests {
 
     @Test
     @DisplayName("Persistence Test")
-    public void persistenceTest() throws TestException {
+    public void persistenceTest() throws TestException, ResponseException, DataAccessException {
         var initialRowCount = getDatabaseRows();
 
         TestModels.TestRegisterRequest registerRequest = new TestModels.TestRegisterRequest();
@@ -97,7 +99,7 @@ public class PersistenceTests {
             getConnectionMethod.setAccessible(true);
 
             Object obj = clazz.getDeclaredConstructor().newInstance();
-            try (Connection conn = (Connection) getConnectionMethod.invoke(obj);) {
+            try (Connection conn = (Connection) getConnectionMethod.invoke(obj)) {
                 try (var statement = conn.createStatement()) {
                     for (String table : getTables(conn)) {
                         var sql = "SELECT count(*) FROM " + table;

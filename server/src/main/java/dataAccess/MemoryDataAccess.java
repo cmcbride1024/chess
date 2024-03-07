@@ -6,6 +6,7 @@ import model.UserData;
 
 import java.util.*;
 
+
 public class MemoryDataAccess implements DataAccess {
     private int userId = 0;
     private int gameId = 0;
