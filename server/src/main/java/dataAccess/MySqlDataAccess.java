@@ -79,16 +79,34 @@ public class MySqlDataAccess implements DataAccess {
 
     @Override
     public void clearAuthTokens() throws DataAccessException {
-
+        String statement = "TRUNCATE authTokens";
     }
 
     private final String[] createStatements = {
             """
             CREATE TABLE IF NOT EXISTS users (
-                `userId` int NOT NULL AUTO_INCREMENT,
+                `userID` int NOT NULL AUTO_INCREMENT,
                 `userData` TEXT DEFAULT NULL,
-                PRIMARY KEY (`userId`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+                PRIMARY KEY (`userID`)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS authTokens (
+                `userData` TEXT DEFAULT NULL,
+                `authData` TEXT DEFAULT NULL
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS gameIds (
+                `gameID` int NOT NULL AUTO_INCREMENT,
+                `gameName` TEXT DEFAULT NULL,
+                PRIMARY KEY (`gameID`)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS games (
+                `gameData` TEXT DEFAULT NULL
+            )
             """
     };
 
