@@ -2,10 +2,12 @@ package service;
 
 import chess.ChessGame;
 import dataAccess.*;
+import exception.ResponseException;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
 
+import java.sql.SQLException;
 import java.util.Collection;
 
 public class UserService {
@@ -79,9 +81,10 @@ public class UserService {
         dataAccess.joinGame(username, playerColor, gameID);
     }
 
-    public void clearApplication() throws DataAccessException {
+    public void clearApplication() throws DataAccessException, ResponseException, SQLException {
         dataAccess.clearUsers();
         dataAccess.clearGames();
         dataAccess.clearAuthTokens();
+        dataAccess.clearGameIds();
     }
 }

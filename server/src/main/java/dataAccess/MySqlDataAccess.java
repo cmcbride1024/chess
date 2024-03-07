@@ -68,18 +68,55 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public void clearUsers() throws DataAccessException {
-
+    public void clearUsers() throws DataAccessException, ResponseException, SQLException {
+        String statement = "TRUNCATE users";
+        executeUpdate(statement);
     }
 
     @Override
-    public void clearGames() throws DataAccessException {
-
+    public void clearGames() throws DataAccessException, ResponseException, SQLException {
+        String statement = "TRUNCATE games";
+        executeUpdate(statement);
     }
 
     @Override
-    public void clearAuthTokens() throws DataAccessException {
+    public void clearAuthTokens() throws DataAccessException, ResponseException, SQLException {
         String statement = "TRUNCATE authTokens";
+        executeUpdate(statement);
+    }
+
+    public void clearGameIds() throws DataAccessException, ResponseException, SQLException {
+        String statement = "TRUNCATE gameIds";
+        executeUpdate(statement);
+    }
+
+    private int executeUpdate(String statement, Object... parameters) throws ResponseException, DataAccessException, SQLException {
+        try (var conn  = DatabaseManager.getConnection()) {
+            try (var ps = conn.prepareStatement(statement, RETURN_GENERATED_KEYS)) {
+                for (int i = 0; i < parameters.length; i++) {
+                    var parameter = parameters[i];
+                    switch (parameter) {
+                        case String p -> ps.setString(i + 1, p);
+                        case Integer p -> ps.setInt(i + 1, p);
+                        case AuthData p -> ps.setString(i+1, p.toString());
+                        case GameData p -> ps.setString(i+1, p.toString());
+                        case UserData p -> ps.setString(i+1, p.toString());
+                        case null -> ps.setNull(i + 1, NULL);
+                        default -> {}
+                    }
+                }
+                ps.executeUpdate();
+
+                var rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+
+                return 0;
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, String.format("Unable to update database: %s, %s", statement, e.getMessage()));
+        }
     }
 
     private final String[] createStatements = {

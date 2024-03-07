@@ -1,9 +1,12 @@
 package dataAccess;
 
+import exception.ResponseException;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
 
+import javax.xml.crypto.Data;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.List;
@@ -29,9 +32,11 @@ public interface DataAccess {
 
     void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID;
 
-    void clearUsers() throws DataAccessException;
+    void clearUsers() throws DataAccessException, ResponseException, SQLException;
 
-    void clearGames() throws DataAccessException;
+    void clearGames() throws DataAccessException, ResponseException, SQLException;
 
-    void clearAuthTokens() throws DataAccessException;
+    void clearAuthTokens() throws DataAccessException, ResponseException, SQLException;
+
+    void clearGameIds() throws DataAccessException, ResponseException, SQLException;
 }

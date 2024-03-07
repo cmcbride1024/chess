@@ -5,12 +5,14 @@ import dataAccess.DataAccessException;
 import dataAccess.InvalidGameID;
 import dataAccess.MemoryDataAccess;
 import dataAccess.UnauthorizedException;
+import exception.ResponseException;
 import model.UserData;
 import model.AuthData;
 import model.GameData;
 import org.junit.jupiter.api.Test;
 import service.UserService;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -171,7 +173,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void clearApplication() throws DataAccessException {
+    void clearApplication() throws DataAccessException, ResponseException, SQLException {
         UserData testUser = new UserData("steve01", "password", "steve@gmail.com");
         dataAccess.createUser(testUser);
         dataAccess.createAuth(testUser);
@@ -188,7 +190,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void clearEmptyApplication() throws DataAccessException {
+    void clearEmptyApplication() throws DataAccessException, ResponseException, SQLException {
         // Verify that database is already empty
         assertEquals(0, dataAccess.getGames().size());
         assertEquals(0, dataAccess.getAuths().size());

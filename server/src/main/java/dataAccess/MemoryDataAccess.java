@@ -139,4 +139,6 @@ public class MemoryDataAccess implements DataAccess {
     public void clearAuthTokens() {
         authTokens.clear();
     }
+
+    public void clearGameIds() { gameIds.clear(); }
 }

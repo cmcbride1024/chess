@@ -176,6 +176,7 @@ public class Server {
                 JoinInformation join = gson.fromJson(jsonObject, JoinInformation.class);
                 service.joinGame(authToken, join.playerColor(), join.gameID());
             } else {
+                // Add player as an observer
                 GameID join = gson.fromJson(jsonObject, GameID.class);
                 service.joinGame(authToken, null, join.gameID());
             }
@@ -220,4 +221,3 @@ record GameName(String gameName) {}
 record GameID(Integer gameID) {}
 
 record JoinInformation(String playerColor, Integer gameID) {}
-
