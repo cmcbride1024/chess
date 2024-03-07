@@ -1,14 +1,13 @@
 package dataAccess;
 
+import com.google.gson.Gson;
 import model.AuthData;
 import model.UserData;
 import model.GameData;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.List;
+
 import exception.ResponseException;
 
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
@@ -20,21 +19,37 @@ public class MySqlDataAccess implements DataAccess {
         configureDatabase();
     }
 
-    public void createUser(UserData u) throws DataAccessException {
-
-    }
-
-    public AuthData createAuth(UserData u) throws DataAccessException {
-        return null;
-    }
-
-    public Integer createGameId(String gameName) throws DataAccessException {
-        return null;
+    @Override
+    public void createUser(UserData userData) throws DataAccessException, ResponseException, SQLException {
+        String statement = "INSERT INTO users (userData) VALUES (?)";
+        var jsonUser = new Gson().toJson(userData);
+        executeUpdate(statement, jsonUser);
     }
 
     @Override
-    public void createGame(GameData g) throws DataAccessException {
+    public AuthData createAuth(UserData userData) throws DataAccessException, ResponseException, SQLException {
+        String statement = "INSERT INTO authTokens (userData, authData) VALUES (?, ?)";
+        String newUUID = UUID.randomUUID().toString();
+        AuthData authData = new AuthData(newUUID, userData.username());
 
+        var jsonUser = new Gson().toJson(userData);
+        var jsonAuth = new Gson().toJson(authData);
+        executeUpdate(statement, jsonUser, jsonAuth);
+
+        return authData;
+    }
+
+    @Override
+    public Integer createGameID(String gameName) throws DataAccessException, ResponseException, SQLException {
+        String statement = "INSERT INTO gameIDs (gameName) VALUES (?)";
+        return executeUpdate(statement, gameName);
+    }
+
+    @Override
+    public void createGame(GameData gameData) throws DataAccessException, ResponseException, SQLException {
+        String statement = "INSERT INTO games (gameData) VALUES (?)";
+        var jsonGame = new Gson().toJson(gameData);
+        executeUpdate(statement, jsonGame);
     }
 
     @Override
@@ -58,8 +73,9 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public void deleteAuth(AuthData auth) throws DataAccessException {
-
+    public void deleteAuth(AuthData auth) throws DataAccessException, ResponseException, SQLException {
+        String statement = "DELETE FROM authTokens WHERE authData=?";
+        executeUpdate(statement, auth);
     }
 
     @Override
@@ -85,8 +101,9 @@ public class MySqlDataAccess implements DataAccess {
         executeUpdate(statement);
     }
 
-    public void clearGameIds() throws DataAccessException, ResponseException, SQLException {
-        String statement = "TRUNCATE gameIds";
+    @Override
+    public void clearGameIDs() throws DataAccessException, ResponseException, SQLException {
+        String statement = "TRUNCATE gameIDs";
         executeUpdate(statement);
     }
 
@@ -134,7 +151,7 @@ public class MySqlDataAccess implements DataAccess {
             )
             """,
             """
-            CREATE TABLE IF NOT EXISTS gameIds (
+            CREATE TABLE IF NOT EXISTS gameIDs (
                 `gameID` int NOT NULL AUTO_INCREMENT,
                 `gameName` TEXT DEFAULT NULL,
                 PRIMARY KEY (`gameID`)

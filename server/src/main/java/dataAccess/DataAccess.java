@@ -5,20 +5,19 @@ import model.AuthData;
 import model.GameData;
 import model.UserData;
 
-import javax.xml.crypto.Data;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.List;
 
 public interface DataAccess {
-    void createUser(UserData u) throws DataAccessException;
+    void createUser(UserData userData) throws DataAccessException, ResponseException, SQLException;
 
-    AuthData createAuth(UserData u) throws DataAccessException;
+    AuthData createAuth(UserData userData) throws DataAccessException, ResponseException, SQLException;
 
-    Integer createGameId(String gameName) throws  DataAccessException;
+    Integer createGameID(String gameName) throws DataAccessException, ResponseException, SQLException;
 
-    void createGame(GameData g) throws  DataAccessException;
+    void createGame(GameData gameData) throws DataAccessException, ResponseException, SQLException;
 
     UserData getUser(String username) throws DataAccessException;
 
@@ -28,7 +27,7 @@ public interface DataAccess {
 
     Collection<GameData> getGames() throws DataAccessException;
 
-    void deleteAuth(AuthData auth) throws DataAccessException;
+    void deleteAuth(AuthData auth) throws DataAccessException, ResponseException, SQLException;
 
     void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID;
 
@@ -38,5 +37,5 @@ public interface DataAccess {
 
     void clearAuthTokens() throws DataAccessException, ResponseException, SQLException;
 
-    void clearGameIds() throws DataAccessException, ResponseException, SQLException;
+    void clearGameIDs() throws DataAccessException, ResponseException, SQLException;
 }

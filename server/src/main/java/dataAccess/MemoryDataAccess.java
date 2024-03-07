@@ -8,27 +8,27 @@ import java.util.*;
 
 
 public class MemoryDataAccess implements DataAccess {
-    private int userId = 0;
-    private int gameId = 0;
+    private int userID = 0;
+    private int gameID = 0;
     private final HashMap<Integer, UserData> users = new HashMap<>();
     private final HashMap<UserData, List<AuthData>> authTokens = new HashMap<>();
-    private final HashMap<String, Integer> gameIds = new HashMap<>();
+    private final HashMap<String, Integer> gameIDs = new HashMap<>();
     private final HashSet<GameData> games = new HashSet<>();
 
     public void createUser(UserData userData) {
         var user = new UserData(userData.username(), userData.password(), userData.email());
-        getUsers().put(++userId, user);
+        getUsers().put(++userID, user);
     }
 
-    public AuthData createAuth(UserData user) {
+    public AuthData createAuth(UserData userData) {
         String newUUID = UUID.randomUUID().toString();
-        List<AuthData> userAuths = authTokens.get(user);
+        List<AuthData> userAuths = authTokens.get(userData);
 
-        AuthData newAuthData = new AuthData(newUUID, user.username());
+        AuthData newAuthData = new AuthData(newUUID, userData.username());
         if (userAuths == null) {
             userAuths = new ArrayList<>();
             userAuths.add(newAuthData);
-            authTokens.put(user, userAuths);
+            authTokens.put(userData, userAuths);
         } else {
             userAuths.add(newAuthData);
         }
@@ -36,14 +36,14 @@ public class MemoryDataAccess implements DataAccess {
         return newAuthData;
     }
 
-    public Integer createGameId(String gameName) {
-        gameIds.put(gameName, ++gameId);
+    public Integer createGameID(String gameName) {
+        gameIDs.put(gameName, ++gameID);
 
-        return gameId;
+        return gameID;
     }
 
-    public void createGame(GameData g) {
-        games.add(g);
+    public void createGame(GameData gameData) {
+        games.add(gameData);
     }
 
     public UserData getUser(String username) {
@@ -101,7 +101,7 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     public void joinGame(String username, String playerColor, int gameId) throws InvalidGameID, DataAccessException {
-        if (!gameIds.containsValue(gameId)) {
+        if (!gameIDs.containsValue(gameId)) {
             throw new InvalidGameID("Game does not exist.");
         }
 
@@ -128,17 +128,17 @@ public class MemoryDataAccess implements DataAccess {
 
     public void clearUsers() {
         getUsers().clear();
-        userId = 1;
+        userID = 1;
     }
 
     public void clearGames() {
         games.clear();
-        gameId = 1;
+        gameID = 1;
     }
 
     public void clearAuthTokens() {
         authTokens.clear();
     }
 
-    public void clearGameIds() { gameIds.clear(); }
+    public void clearGameIDs() { gameIDs.clear(); }
 }

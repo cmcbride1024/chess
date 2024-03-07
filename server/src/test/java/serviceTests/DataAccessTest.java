@@ -25,7 +25,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void registerUser() throws UnauthorizedException, DataAccessException {
+    void registerUser() throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         UserData testUser = new UserData("stevejobs", "apple", "steve@icloud.com");
 
         AuthData authData = service.register(testUser);
@@ -37,7 +37,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void registerExistingUser() throws UnauthorizedException, DataAccessException {
+    void registerExistingUser() throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         UserData testUser = new UserData("stevejobs", "apple", "steve@icloud.com");
         service.register(testUser);
 
@@ -51,7 +51,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void loginUser() throws DataAccessException, UnauthorizedException {
+    void loginUser() throws DataAccessException, UnauthorizedException, ResponseException, SQLException {
         UserData testUser = new UserData("lebron", "leking", "lebron@aol.com");
         service.register(testUser);
 
@@ -61,7 +61,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void loginNonExistentUser() throws DataAccessException {
+    void loginNonExistentUser() throws DataAccessException, ResponseException, SQLException {
         assertEquals(0, dataAccess.getAuths().size());
         UserData testUser = new UserData("lebron", "leking", "lebron@aol.com");
 
@@ -74,7 +74,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void logoutUser() throws UnauthorizedException, DataAccessException {
+    void logoutUser() throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         AuthData testAuth = service.register(testUser);
 
@@ -83,7 +83,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void logoutNonExistentUser() throws DataAccessException {
+    void logoutNonExistentUser() throws DataAccessException, ResponseException, SQLException {
         try {
             service.logout(UUID.randomUUID().toString());
             fail("Service shouldn't log out user who isn't logged in.");
@@ -93,7 +93,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void listGames() throws UnauthorizedException, DataAccessException {
+    void listGames() throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         AuthData testAuth = service.register(testUser);
         service.createGame(testAuth.authToken(), "game1");
@@ -118,7 +118,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void createGame() throws UnauthorizedException, DataAccessException {
+    void createGame() throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         AuthData testAuth = service.register(testUser);
         service.createGame(testAuth.authToken(), "game1");
@@ -127,7 +127,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void createGameNotAuthorized() {
+    void createGameNotAuthorized() throws ResponseException, SQLException {
         try {
             service.createGame(UUID.randomUUID().toString(), "game1");
             fail("Service shouldn't log out user who isn't logged in.");
@@ -137,7 +137,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void joinGame() throws DataAccessException, UnauthorizedException, InvalidGameID {
+    void joinGame() throws DataAccessException, UnauthorizedException, InvalidGameID, ResponseException, SQLException {
         UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
         AuthData testAuth = service.register(testUser);
 
@@ -146,7 +146,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void joinGameNotAuthorized() throws DataAccessException, InvalidGameID {
+    void joinGameNotAuthorized() throws DataAccessException, InvalidGameID, ResponseException, SQLException {
         try {
             var testAuth = new AuthData(UUID.randomUUID().toString(), "carlos");
             service.createGame(testAuth.authToken(), "game1");
@@ -159,7 +159,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void joinGameWrongID() throws UnauthorizedException, DataAccessException {
+    void joinGameWrongID() throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         try {
             UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
             AuthData testAuth = service.register(testUser);
@@ -179,7 +179,7 @@ public class DataAccessTest {
         dataAccess.createAuth(testUser);
 
         String gameName = "test";
-        Integer gameID = dataAccess.createGameId(gameName);
+        Integer gameID = dataAccess.createGameID(gameName);
         ChessGame game = new ChessGame();
         dataAccess.createGame(new GameData(gameID, "white", "black", gameName, game));
 

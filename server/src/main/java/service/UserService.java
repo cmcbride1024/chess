@@ -17,7 +17,7 @@ public class UserService {
         this.dataAccess = dataAccess;
     }
 
-    public AuthData register(UserData user) throws UnauthorizedException, DataAccessException {
+    public AuthData register(UserData user) throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         var existingUser = dataAccess.getUser(user.username());
 
         if (existingUser == null) {
@@ -28,7 +28,7 @@ public class UserService {
         }
     }
 
-    public AuthData login(String username, String password) throws DataAccessException, UnauthorizedException {
+    public AuthData login(String username, String password) throws DataAccessException, UnauthorizedException, ResponseException, SQLException {
         var existingUser = dataAccess.getUser(username);
 
         if (existingUser == null) {
@@ -40,7 +40,7 @@ public class UserService {
         }
     }
 
-    public void logout(String authToken) throws UnauthorizedException, DataAccessException {
+    public void logout(String authToken) throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");
@@ -58,13 +58,13 @@ public class UserService {
         return dataAccess.getGames();
     }
 
-    public int createGame(String authToken, String gameName) throws UnauthorizedException, DataAccessException {
+    public int createGame(String authToken, String gameName) throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");
         }
 
-        int newGameID = dataAccess.createGameId(gameName);
+        int newGameID = dataAccess.createGameID(gameName);
         ChessGame game = new ChessGame();
         dataAccess.createGame(new GameData(newGameID, null, null, gameName, game));
 
@@ -85,6 +85,6 @@ public class UserService {
         dataAccess.clearUsers();
         dataAccess.clearGames();
         dataAccess.clearAuthTokens();
-        dataAccess.clearGameIds();
+        dataAccess.clearGameIDs();
     }
 }
