@@ -39,8 +39,9 @@ public class MySqlDataAccess implements DataAccess {
         String statement = "INSERT INTO authTokens (userData, authData, authToken) VALUES (?, ?, ?)";
         String newUUID = UUID.randomUUID().toString();
         AuthData authData = new AuthData(newUUID, userData.username());
+        UserData newUserData = new UserData(userData.username(), hashPassword(userData.password()), userData.email());
 
-        var jsonUser = new Gson().toJson(userData);
+        var jsonUser = new Gson().toJson(newUserData);
         var jsonAuth = new Gson().toJson(authData);
         executeUpdate(statement, jsonUser, jsonAuth, newUUID);
 
@@ -71,13 +72,12 @@ public class MySqlDataAccess implements DataAccess {
                         String userJson = rs.getString("userData");
                         return new Gson().fromJson(userJson, UserData.class);
                     }
+                    return null;
                 }
             }
         } catch (SQLException e) {
             throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
         }
-
-        return null;
     }
 
     @Override

@@ -108,7 +108,7 @@ public class DataAccessTest {
     }
 
     @Test
-    void listGamesNotAuthorized() throws DataAccessException {
+    void listGamesNotAuthorized() throws DataAccessException, ResponseException {
         try {
             service.listGames(UUID.randomUUID().toString());
             fail("Service shouldn't list games for user who isn't registered.");
