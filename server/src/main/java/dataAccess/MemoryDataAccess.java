@@ -9,16 +9,25 @@ import java.util.*;
 
 
 public class MemoryDataAccess implements DataAccess {
-    private int userID = 0;
-    private int gameID = 0;
-    private final HashMap<Integer, UserData> users = new HashMap<>();
-    private final HashMap<UserData, List<AuthData>> authTokens = new HashMap<>();
-    private final HashMap<String, Integer> gameIDs = new HashMap<>();
-    private final HashSet<GameData> games = new HashSet<>();
+    private int userID;
+    private int gameID;
+    private final HashMap<Integer, UserData> users;
+    private final HashMap<UserData, List<AuthData>> authTokens;
+    private final HashMap<String, Integer> gameIDs;
+    private final HashSet<GameData> games;
+
+    public MemoryDataAccess() {
+        userID = 0;
+        gameID = 0;
+        users = new HashMap<>();
+        authTokens = new HashMap<>();
+        gameIDs = new HashMap<>();
+        games = new HashSet<>();
+    }
 
     @Override
     public void createUser(UserData userData) {
-        var user = new UserData(userData.username(), userData.password(), userData.email());
+        var user = new UserData(userData.username(), hashPassword(userData.password()), userData.email());
         getUsers().put(++userID, user);
     }
 
