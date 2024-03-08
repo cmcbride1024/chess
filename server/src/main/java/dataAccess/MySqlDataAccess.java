@@ -20,9 +20,16 @@ public class MySqlDataAccess implements DataAccess {
         configureDatabase();
     }
 
-    private String hashPassword(String password) {
+    @Override
+    public String hashPassword(String password) {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         return encoder.encode(password);
+    }
+
+    @Override
+    public boolean passwordsMatch(String loginPassword, String storedPassword) {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        return encoder.matches(loginPassword, storedPassword);
     }
 
     @Override

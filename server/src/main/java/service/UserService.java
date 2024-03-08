@@ -33,7 +33,7 @@ public class UserService {
 
         if (existingUser == null) {
             throw new UnauthorizedException("Username has not been registered.");
-        } else if (!existingUser.password().equals(password)) {
+        } else if (!dataAccess.passwordsMatch(password, existingUser.password())) {
             throw new DataAccessException("Incorrect password.");
         } else {
             return dataAccess.createAuth(existingUser);

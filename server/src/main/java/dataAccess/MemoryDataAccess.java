@@ -3,6 +3,7 @@ package dataAccess;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.*;
 
@@ -15,11 +16,13 @@ public class MemoryDataAccess implements DataAccess {
     private final HashMap<String, Integer> gameIDs = new HashMap<>();
     private final HashSet<GameData> games = new HashSet<>();
 
+    @Override
     public void createUser(UserData userData) {
         var user = new UserData(userData.username(), userData.password(), userData.email());
         getUsers().put(++userID, user);
     }
 
+    @Override
     public AuthData createAuth(UserData userData) {
         String newUUID = UUID.randomUUID().toString();
         List<AuthData> userAuths = authTokens.get(userData);
@@ -36,16 +39,19 @@ public class MemoryDataAccess implements DataAccess {
         return newAuthData;
     }
 
+    @Override
     public Integer createGameID(String gameName) {
         gameIDs.put(gameName, ++gameID);
 
         return gameID;
     }
 
+    @Override
     public void createGame(GameData gameData) {
         games.add(gameData);
     }
 
+    @Override
     public UserData getUser(String username) {
         for (UserData user : getUsers().values()) {
             if (user.username().equals(username)) {
@@ -60,6 +66,7 @@ public class MemoryDataAccess implements DataAccess {
         return users;
     }
 
+    @Override
     public AuthData getAuth(String authToken) {
         for (Map.Entry<UserData, List<AuthData>> entry : authTokens.entrySet()) {
             List<AuthData> authList = entry.getValue();
@@ -74,14 +81,17 @@ public class MemoryDataAccess implements DataAccess {
         return null;
     }
 
+    @Override
     public HashMap<UserData, List<AuthData>> getAuths() {
         return authTokens;
     }
 
+    @Override
     public Collection<GameData> getGames() {
         return games;
     }
 
+    @Override
     public void deleteAuth(AuthData authToken) {
         for (Map.Entry<UserData, List<AuthData>> entry : getAuths().entrySet()) {
             List<AuthData> authList = entry.getValue();
@@ -100,6 +110,7 @@ public class MemoryDataAccess implements DataAccess {
         }
     }
 
+    @Override
     public void joinGame(String username, String playerColor, int gameID) throws InvalidGameID, DataAccessException {
         if (!gameIDs.containsValue(gameID)) {
             throw new InvalidGameID("Game does not exist.");
@@ -126,19 +137,35 @@ public class MemoryDataAccess implements DataAccess {
         }
     }
 
+    @Override
     public void clearUsers() {
         getUsers().clear();
         userID = 1;
     }
 
+    @Override
     public void clearGames() {
         games.clear();
         gameID = 1;
     }
 
+    @Override
     public void clearAuthTokens() {
         authTokens.clear();
     }
 
+    @Override
     public void clearGameIDs() { gameIDs.clear(); }
+
+    @Override
+    public String hashPassword(String password) {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        return encoder.encode(password);
+    }
+
+    @Override
+    public boolean passwordsMatch(String loginPassword, String storedPassword) {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        return encoder.matches(loginPassword, storedPassword);
+    }
 }

@@ -38,4 +38,8 @@ public interface DataAccess {
     void clearAuthTokens() throws DataAccessException, ResponseException, SQLException;
 
     void clearGameIDs() throws DataAccessException, ResponseException, SQLException;
+
+    String hashPassword(String password);
+
+    boolean passwordsMatch(String loginPassword, String storedPassword);
 }
