@@ -9,6 +9,7 @@ import java.util.*;
 import java.sql.*;
 
 import exception.ResponseException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
 import static java.sql.Types.NULL;
@@ -19,22 +20,29 @@ public class MySqlDataAccess implements DataAccess {
         configureDatabase();
     }
 
+    private String hashPassword(String password) {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        return encoder.encode(password);
+    }
+
     @Override
     public void createUser(UserData userData) throws DataAccessException, ResponseException, SQLException {
-        String statement = "INSERT INTO users (userData) VALUES (?)";
-        var jsonUser = new Gson().toJson(userData);
-        executeUpdate(statement, jsonUser);
+        String statement = "INSERT INTO users (username, userData) VALUES (?, ?)";
+        String hashedPassword = hashPassword(userData.password());
+        UserData newUserData = new UserData(userData.username(), hashedPassword, userData.email());
+        var jsonUser = new Gson().toJson(newUserData);
+        executeUpdate(statement, newUserData.username(), jsonUser);
     }
 
     @Override
     public AuthData createAuth(UserData userData) throws DataAccessException, ResponseException, SQLException {
-        String statement = "INSERT INTO authTokens (userData, authData) VALUES (?, ?)";
+        String statement = "INSERT INTO authTokens (userData, authData, authToken) VALUES (?, ?, ?)";
         String newUUID = UUID.randomUUID().toString();
         AuthData authData = new AuthData(newUUID, userData.username());
 
         var jsonUser = new Gson().toJson(userData);
         var jsonAuth = new Gson().toJson(authData);
-        executeUpdate(statement, jsonUser, jsonAuth);
+        executeUpdate(statement, jsonUser, jsonAuth, newUUID);
 
         return authData;
     }
@@ -53,18 +61,72 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public UserData getUser(String username) throws DataAccessException {
+    public UserData getUser(String username) throws DataAccessException, ResponseException {
+        try (var conn = DatabaseManager.getConnection()) {
+            String statement = "SELECT userData FROM users WHERE username=?";
+            try (var ps = conn.prepareStatement(statement)) {
+                ps.setString(1, username);
+                try (var rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String userJson = rs.getString("userData");
+                        return new Gson().fromJson(userJson, UserData.class);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+
         return null;
     }
 
     @Override
-    public AuthData getAuth(String authToken) throws DataAccessException {
+    public AuthData getAuth(String authToken) throws DataAccessException, ResponseException {
+        try (var conn = DatabaseManager.getConnection()) {
+            String statement = "SELECT authData FROM authTokens WHERE authToken=?";
+            try (var ps = conn.prepareStatement(statement)) {
+                ps.setString(1, authToken);
+                try (var rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String authJson = rs.getString("authData");
+                        return new Gson().fromJson(authJson, AuthData.class);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+
         return null;
     }
 
     @Override
-    public HashMap<UserData, List<AuthData>> getAuths() throws DataAccessException {
-        return null;
+    public HashMap<UserData, List<AuthData>> getAuths() throws DataAccessException, ResponseException {
+        var result = new HashMap<UserData, List<AuthData>>();
+        try (var conn = DatabaseManager.getConnection()) {
+            String statement = "SELECT userData, authData FROM authTokens";
+            try (var ps = conn.prepareStatement(statement)) {
+                try (var rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String userJson = rs.getString("userData");
+                        String authJson = rs.getString("authData");
+                        UserData userData = new Gson().fromJson(userJson, UserData.class);
+                        AuthData authData = new Gson().fromJson(authJson, AuthData.class);
+
+                        if (result.get(userData) == null) {
+                            result.put(userData, new ArrayList<AuthData>(Collections.singleton(authData)));
+                        } else {
+                            result.get(userData).add(authData);
+                        }
+                        result.computeIfAbsent(userData, key -> Collections.singletonList(authData));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+
+        return result;
     }
 
     @Override
@@ -140,6 +202,7 @@ public class MySqlDataAccess implements DataAccess {
             """
             CREATE TABLE IF NOT EXISTS users (
                 `userID` int NOT NULL AUTO_INCREMENT,
+                `username` TEXT DEFAULT NULL,
                 `userData` TEXT DEFAULT NULL,
                 PRIMARY KEY (`userID`)
             )
@@ -147,7 +210,8 @@ public class MySqlDataAccess implements DataAccess {
             """
             CREATE TABLE IF NOT EXISTS authTokens (
                 `userData` TEXT DEFAULT NULL,
-                `authData` TEXT DEFAULT NULL
+                `authData` TEXT DEFAULT NULL,
+                `authToken` TEXT DEFAULT NULL
             )
             """,
             """

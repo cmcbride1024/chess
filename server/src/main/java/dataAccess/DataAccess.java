@@ -19,11 +19,11 @@ public interface DataAccess {
 
     void createGame(GameData gameData) throws DataAccessException, ResponseException, SQLException;
 
-    UserData getUser(String username) throws DataAccessException;
+    UserData getUser(String username) throws DataAccessException, ResponseException;
 
-    AuthData getAuth(String authToken) throws DataAccessException;
+    AuthData getAuth(String authToken) throws DataAccessException, ResponseException;
 
-    HashMap<UserData, List<AuthData>> getAuths() throws DataAccessException;
+    HashMap<UserData, List<AuthData>> getAuths() throws DataAccessException, ResponseException;
 
     Collection<GameData> getGames() throws DataAccessException;
 
