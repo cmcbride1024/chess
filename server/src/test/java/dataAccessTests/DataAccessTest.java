@@ -1,4 +1,4 @@
-package serviceTests;
+package dataAccessTests;
 
 import chess.ChessGame;
 import dataAccess.*;
@@ -6,10 +6,8 @@ import exception.ResponseException;
 import model.UserData;
 import model.AuthData;
 import model.GameData;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.beans.factory.annotation.Value;
 import service.UserService;
 
 import java.sql.SQLException;
@@ -190,6 +188,7 @@ public class DataAccessTest {
         AuthData testAuth = service.register(testUser);
 
         service.createGame(testAuth.authToken(), "game1");
+        service.joinGame(testAuth.authToken(), "WHITE", 1);
     }
 
     @ParameterizedTest
@@ -221,6 +220,7 @@ public class DataAccessTest {
             service.createGame(testAuth.authToken(), "game1");
             service.joinGame(testAuth.authToken(), "BLACK", 2);
 
+            fail("Service shouldn't allow user to join game with invalid ID.");
         } catch (InvalidGameID e) {
             assertEquals(1, dataAccess.getGames().size());
         }
