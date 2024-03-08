@@ -29,7 +29,7 @@ public interface DataAccess {
 
     void deleteAuth(AuthData auth) throws DataAccessException, ResponseException, SQLException;
 
-    void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID;
+    void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID, ResponseException, SQLException;
 
     void clearUsers() throws DataAccessException, ResponseException, SQLException;
 

@@ -49,7 +49,7 @@ public class UserService {
         dataAccess.deleteAuth(authData);
     }
 
-    public Collection<GameData> listGames(String authToken) throws UnauthorizedException, DataAccessException {
+    public Collection<GameData> listGames(String authToken) throws UnauthorizedException, DataAccessException, ResponseException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");
@@ -71,7 +71,7 @@ public class UserService {
         return newGameID;
     }
 
-    public void joinGame(String authToken, String playerColor, Integer gameID) throws DataAccessException, UnauthorizedException, InvalidGameID {
+    public void joinGame(String authToken, String playerColor, Integer gameID) throws DataAccessException, UnauthorizedException, InvalidGameID, ResponseException, SQLException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
             throw new UnauthorizedException("User is not registered with the system.");

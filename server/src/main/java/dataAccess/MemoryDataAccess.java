@@ -100,13 +100,13 @@ public class MemoryDataAccess implements DataAccess {
         }
     }
 
-    public void joinGame(String username, String playerColor, int gameId) throws InvalidGameID, DataAccessException {
-        if (!gameIDs.containsValue(gameId)) {
+    public void joinGame(String username, String playerColor, int gameID) throws InvalidGameID, DataAccessException {
+        if (!gameIDs.containsValue(gameID)) {
             throw new InvalidGameID("Game does not exist.");
         }
 
         for (GameData game : games) {
-            if (game.gameID() == gameId && playerColor != null) {
+            if (game.gameID() == gameID && playerColor != null) {
                 switch (playerColor) {
                     case "WHITE":
                         if (game.whiteUsername() != null) {

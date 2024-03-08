@@ -133,7 +133,7 @@ public class MySqlDataAccess implements DataAccess {
     public Collection<GameData> getGames() throws DataAccessException, ResponseException {
         ArrayList<GameData> games = new ArrayList<>();
         try (var conn = DatabaseManager.getConnection()) {
-            String statement = "SELECT * FROM games";
+            String statement = "SELECT gameData FROM games";
             try (var ps = conn.prepareStatement(statement)) {
                 try (var rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -156,9 +156,43 @@ public class MySqlDataAccess implements DataAccess {
         executeUpdate(statement, auth);
     }
 
-    @Override
-    public void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID {
+    private void deleteGame(GameData gameData) throws DataAccessException, ResponseException {
+        try (var conn = DatabaseManager.getConnection()) {
+            String statement = "DELETE FROM games WHERE gameData=?";
+            try (var ps = conn.prepareStatement(statement)) {
+                String gameJson = new Gson().toJson(gameData);
+                ps.setString(1, gameJson);
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+    }
 
+    @Override
+    public void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID, ResponseException, SQLException {
+        for (GameData game : getGames()) {
+            if (game.gameID() == gameID && playerColor != null) {
+                switch(playerColor) {
+                    case "WHITE":
+                        if (game.whiteUsername() != null) {
+                            throw new DataAccessException("Player has already joined as white.");
+                        }
+                        createGame(game.changeWhiteName(username));
+                        break;
+                    case "BLACK":
+                        if (game.blackUsername() != null) {
+                            throw new DataAccessException("Player has already joined as white.");
+                        }
+                        createGame(game.changeBlackName(username));
+                        break;
+                }
+                deleteGame(game);
+                return;
+            }
+        }
+
+        throw new InvalidGameID("Game does not exist.");
     }
 
     @Override
@@ -193,9 +227,9 @@ public class MySqlDataAccess implements DataAccess {
                     switch (parameter) {
                         case String p -> ps.setString(i + 1, p);
                         case Integer p -> ps.setInt(i + 1, p);
-                        case AuthData p -> ps.setString(i+1, p.toString());
-                        case GameData p -> ps.setString(i+1, p.toString());
-                        case UserData p -> ps.setString(i+1, p.toString());
+                        case AuthData p -> ps.setString(i + 1, p.toString());
+                        case GameData p -> ps.setString(i + 1, p.toString());
+                        case UserData p -> ps.setString(i + 1, p.toString());
                         case null -> ps.setNull(i + 1, NULL);
                         default -> {}
                     }
