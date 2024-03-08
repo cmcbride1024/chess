@@ -6,6 +6,7 @@ import exception.ResponseException;
 import model.UserData;
 import model.AuthData;
 import model.GameData;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import service.UserService;
@@ -31,14 +32,23 @@ public class DataAccessTest {
         return db;
     }
 
+    @BeforeEach
+    void clearDatabase() throws ResponseException, SQLException, DataAccessException {
+        UserService service = new UserService(new MySqlDataAccess());
+        service.clearApplication();
+    }
+
     @ParameterizedTest
     @ValueSource(classes = {MySqlDataAccess.class, MemoryDataAccess.class})
     void registerUser(Class<? extends DataAccess> dbClass) throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         DataAccess dataAccess = getDataAccess(dbClass);
         UserService service = new UserService(dataAccess);
+        assertEquals(0, dataAccess.getUsers().size());
+        assertEquals(0, dataAccess.getAuths().size());
 
         UserData testUser = new UserData("stevejobs", "apple", "steve@icloud.com");
         AuthData authData = service.register(testUser);
+        assertEquals(1, dataAccess.getUsers().size());
         assertEquals(1, dataAccess.getAuths().size());
         assertNotNull(dataAccess.getAuth(authData.authToken()));
     }
@@ -56,6 +66,7 @@ public class DataAccessTest {
             service.register(testUser);
             fail("Service registered an existing user");
         } catch (UnauthorizedException e) {
+            assertEquals(1, dataAccess.getUsers().size());
             assertEquals(1, dataAccess.getAuths().size());
         }
     }
@@ -71,6 +82,7 @@ public class DataAccessTest {
 
         AuthData authData = service.login(testUser.username(), testUser.password());
         assertEquals(2, dataAccess.getAuths().size());
+        assertEquals(1, dataAccess.getUsers().size());
         assertNotNull(dataAccess.getAuth(authData.authToken()));
     }
 
@@ -80,6 +92,7 @@ public class DataAccessTest {
         DataAccess dataAccess = getDataAccess(dbClass);
         UserService service = new UserService(dataAccess);
 
+        assertEquals(0, dataAccess.getUsers().size());
         assertEquals(0, dataAccess.getAuths().size());
         UserData testUser = new UserData("lebron", "leking", "lebron@aol.com");
 
@@ -87,6 +100,7 @@ public class DataAccessTest {
             service.login(testUser.username(), testUser.password());
             fail("User has not been registered first.");
         } catch (UnauthorizedException e) {
+            assertEquals(0, dataAccess.getUsers().size());
             assertEquals(0, dataAccess.getAuths().size());
         }
     }
@@ -102,6 +116,7 @@ public class DataAccessTest {
 
         service.logout(testAuth.authToken());
         assertEquals(0, dataAccess.getAuths().size());
+        assertEquals(1, dataAccess.getUsers().size());
     }
 
     @ParameterizedTest
@@ -157,6 +172,7 @@ public class DataAccessTest {
         DataAccess dataAccess = getDataAccess(dbClass);
         UserService service = new UserService(dataAccess);
 
+        assertEquals(0, dataAccess.getGames().size());
         UserData testUser = new UserData("Bob", "Marley", "bobmarley@yahoo.com");
         AuthData testAuth = service.register(testUser);
         service.createGame(testAuth.authToken(), "game1");
@@ -173,7 +189,7 @@ public class DataAccessTest {
         try {
             service.createGame(UUID.randomUUID().toString(), "game1");
             fail("Service shouldn't log out user who isn't logged in.");
-        } catch (UnauthorizedException | DataAccessException e) {
+        } catch (UnauthorizedException e) {
             assertEquals(0, dataAccess.getAuths().size());
         }
     }
@@ -187,8 +203,9 @@ public class DataAccessTest {
         UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
         AuthData testAuth = service.register(testUser);
 
-        service.createGame(testAuth.authToken(), "game1");
-        service.joinGame(testAuth.authToken(), "WHITE", 1);
+        Integer testGameID = service.createGame(testAuth.authToken(), "game1");
+        service.joinGame(testAuth.authToken(), "WHITE", testGameID);
+        assertEquals(service.listGames(testAuth.authToken()).size(), 1);
     }
 
     @ParameterizedTest
@@ -218,7 +235,8 @@ public class DataAccessTest {
             UserData testUser = new UserData("Steve", "Martin", "steve@gmail.com");
             AuthData testAuth = service.register(testUser);
             service.createGame(testAuth.authToken(), "game1");
-            service.joinGame(testAuth.authToken(), "BLACK", 2);
+            service.joinGame(testAuth.authToken(), "BLACK", 5);
+            System.out.println(service.listGames(testAuth.authToken()));
 
             fail("Service shouldn't allow user to join game with invalid ID.");
         } catch (InvalidGameID e) {

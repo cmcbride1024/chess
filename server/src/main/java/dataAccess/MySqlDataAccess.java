@@ -161,7 +161,7 @@ public class MySqlDataAccess implements DataAccess {
     public HashMap<Integer, UserData> getUsers() throws DataAccessException, ResponseException {
         HashMap<Integer, UserData> users = new HashMap<>();
         try (var conn = DatabaseManager.getConnection()) {
-            String statement = "SELECT userID, userData FROM games";
+            String statement = "SELECT userID, userData FROM users";
             try (var ps = conn.prepareStatement(statement)) {
                 try (var rs = ps.executeQuery()) {
                     while (rs.next()) {
