@@ -160,6 +160,7 @@ public class MySqlDataAccess implements DataAccess {
     @Override
     public void deleteAuth(AuthData auth) throws DataAccessException, ResponseException, SQLException {
         String statement = "DELETE FROM authTokens WHERE authData=?";
+        System.out.println(auth);
         executeUpdate(statement, auth);
     }
 
@@ -196,9 +197,11 @@ public class MySqlDataAccess implements DataAccess {
                 }
                 deleteGame(game);
                 return;
+            } else if (game.gameID() == gameID) {
+                // Player needs to be added to observers
+                return;
             }
         }
-
         throw new InvalidGameID("Game does not exist.");
     }
 
@@ -234,9 +237,9 @@ public class MySqlDataAccess implements DataAccess {
                     switch (parameter) {
                         case String p -> ps.setString(i + 1, p);
                         case Integer p -> ps.setInt(i + 1, p);
-                        case AuthData p -> ps.setString(i + 1, p.toString());
-                        case GameData p -> ps.setString(i + 1, p.toString());
-                        case UserData p -> ps.setString(i + 1, p.toString());
+                        case AuthData p -> ps.setString(i + 1, new Gson().toJson(p));
+                        case GameData p -> ps.setString(i + 1, new Gson().toJson(p));
+                        case UserData p -> ps.setString(i + 1, new Gson().toJson(p));
                         case null -> ps.setNull(i + 1, NULL);
                         default -> {}
                     }
