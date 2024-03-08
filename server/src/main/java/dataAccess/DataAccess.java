@@ -27,6 +27,8 @@ public interface DataAccess {
 
     Collection<GameData> getGames() throws DataAccessException, ResponseException;
 
+    HashMap<Integer, UserData> getUsers() throws DataAccessException, ResponseException;
+
     void deleteAuth(AuthData auth) throws DataAccessException, ResponseException, SQLException;
 
     void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID, ResponseException, SQLException;

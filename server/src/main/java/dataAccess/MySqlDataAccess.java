@@ -33,7 +33,7 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public void createUser(UserData userData) throws DataAccessException, ResponseException, SQLException {
+    public void createUser(UserData userData) throws DataAccessException, ResponseException {
         String statement = "INSERT INTO users (username, userData) VALUES (?, ?)";
         String hashedPassword = hashPassword(userData.password());
         UserData newUserData = new UserData(userData.username(), hashedPassword, userData.email());
@@ -42,7 +42,7 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public AuthData createAuth(UserData userData) throws DataAccessException, ResponseException, SQLException {
+    public AuthData createAuth(UserData userData) throws DataAccessException, ResponseException {
         String statement = "INSERT INTO authTokens (userData, authData, authToken) VALUES (?, ?, ?)";
         String newUUID = UUID.randomUUID().toString();
         AuthData authData = new AuthData(newUUID, userData.username());
@@ -56,7 +56,7 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public Integer createGameID(String gameName) throws DataAccessException, ResponseException, SQLException {
+    public Integer createGameID(String gameName) throws DataAccessException, ResponseException {
         String statement = "INSERT INTO gameIDs (gameName) VALUES (?)";
         return executeUpdate(statement, gameName);
     }
@@ -121,7 +121,7 @@ public class MySqlDataAccess implements DataAccess {
                         AuthData authData = new Gson().fromJson(authJson, AuthData.class);
 
                         if (result.get(userData) == null) {
-                            result.put(userData, new ArrayList<AuthData>(Collections.singleton(authData)));
+                            result.put(userData, new ArrayList<>(Collections.singleton(authData)));
                         } else {
                             result.get(userData).add(authData);
                         }
@@ -158,7 +158,29 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public void deleteAuth(AuthData auth) throws DataAccessException, ResponseException, SQLException {
+    public HashMap<Integer, UserData> getUsers() throws DataAccessException, ResponseException {
+        HashMap<Integer, UserData> users = new HashMap<>();
+        try (var conn = DatabaseManager.getConnection()) {
+            String statement = "SELECT userID, userData FROM games";
+            try (var ps = conn.prepareStatement(statement)) {
+                try (var rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Integer userID = rs.getInt("userID");
+                        String userJson = rs.getString("userData");
+                        UserData userData = new Gson().fromJson(userJson, UserData.class);
+                        users.put(userID, userData);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+
+        return users;
+    }
+
+    @Override
+    public void deleteAuth(AuthData auth) throws DataAccessException, ResponseException {
         String statement = "DELETE FROM authTokens WHERE authData=?";
         System.out.println(auth);
         executeUpdate(statement, auth);
@@ -206,30 +228,30 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public void clearUsers() throws DataAccessException, ResponseException, SQLException {
+    public void clearUsers() throws DataAccessException, ResponseException {
         String statement = "TRUNCATE users";
         executeUpdate(statement);
     }
 
     @Override
-    public void clearGames() throws DataAccessException, ResponseException, SQLException {
+    public void clearGames() throws DataAccessException, ResponseException {
         String statement = "TRUNCATE games";
         executeUpdate(statement);
     }
 
     @Override
-    public void clearAuthTokens() throws DataAccessException, ResponseException, SQLException {
+    public void clearAuthTokens() throws DataAccessException, ResponseException {
         String statement = "TRUNCATE authTokens";
         executeUpdate(statement);
     }
 
     @Override
-    public void clearGameIDs() throws DataAccessException, ResponseException, SQLException {
+    public void clearGameIDs() throws DataAccessException, ResponseException {
         String statement = "TRUNCATE gameIDs";
         executeUpdate(statement);
     }
 
-    private int executeUpdate(String statement, Object... parameters) throws ResponseException, DataAccessException, SQLException {
+    private int executeUpdate(String statement, Object... parameters) throws ResponseException, DataAccessException {
         try (var conn  = DatabaseManager.getConnection()) {
             try (var ps = conn.prepareStatement(statement, RETURN_GENERATED_KEYS)) {
                 for (int i = 0; i < parameters.length; i++) {
