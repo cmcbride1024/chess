@@ -16,8 +16,12 @@ import static java.sql.Types.NULL;
 
 public class MySqlDataAccess implements DataAccess {
 
-    public MySqlDataAccess() throws ResponseException, DataAccessException {
-        configureDatabase();
+    public MySqlDataAccess() {
+        try {
+            configureDatabase();
+        } catch (ResponseException | DataAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

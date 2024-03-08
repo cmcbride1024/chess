@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import dataAccess.*;
-import exception.ResponseException;
 import model.*;
 import service.UserService;
 import spark.*;
@@ -16,7 +15,7 @@ public class Server {
     private final Gson gson = new GsonBuilder().serializeNulls().create();
     private final UserService service = new UserService(new MySqlDataAccess());
 
-    public Server() throws ResponseException, DataAccessException {
+    public Server() {
     }
 
     public int run(int desiredPort) {
