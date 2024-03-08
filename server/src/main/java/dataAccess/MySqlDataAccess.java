@@ -130,8 +130,24 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
-    public Collection<GameData> getGames() throws DataAccessException {
-        return null;
+    public Collection<GameData> getGames() throws DataAccessException, ResponseException {
+        ArrayList<GameData> games = new ArrayList<>();
+        try (var conn = DatabaseManager.getConnection()) {
+            String statement = "SELECT * FROM games";
+            try (var ps = conn.prepareStatement(statement)) {
+                try (var rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String gameJson = rs.getString("gameData");
+                        GameData gameData = new Gson().fromJson(gameJson, GameData.class);
+                        games.add(gameData);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+
+        return games;
     }
 
     @Override

@@ -25,7 +25,7 @@ public interface DataAccess {
 
     HashMap<UserData, List<AuthData>> getAuths() throws DataAccessException, ResponseException;
 
-    Collection<GameData> getGames() throws DataAccessException;
+    Collection<GameData> getGames() throws DataAccessException, ResponseException;
 
     void deleteAuth(AuthData auth) throws DataAccessException, ResponseException, SQLException;
 
