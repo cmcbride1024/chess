@@ -60,6 +60,7 @@ public class ChessClient {
             var email = params[2];
             var newUser = new UserData(username, password, email);
             authData = server.register(newUser);
+            System.out.println(authData.authToken());
             loggedInUser = username;
             state = State.SIGNEDIN;
             return String.format("Account has been created for %s. You are now logged in", username);
@@ -71,7 +72,7 @@ public class ChessClient {
         assertSignedIn();
         if (params.length >= 1) {
             var gameName = params[0];
-            var gameID = server.createGame(gameName).gameID();
+            var gameID = server.createGame(gameName, authData.authToken()).gameID();
             return String.format("Game '%s' has been created with ID: %d", gameName, gameID);
         }
         throw new ResponseException(400, "Expected: <NAME>");
@@ -79,7 +80,7 @@ public class ChessClient {
 
     public String listGames() throws ResponseException {
         assertSignedIn();
-        var games = server.listGames();
+        var games = server.listGames(authData.authToken());
         var result = new StringBuilder();
         var gson = new Gson();
         for (var game : games.gameList()) {
@@ -98,7 +99,7 @@ public class ChessClient {
                     playerColor = params[1];
                 }
                 var joinInformation = new JoinInformation(playerColor, gameID);
-                server.joinGame(joinInformation);
+                server.joinGame(joinInformation, authData.authToken());
                 var joinedUser = (playerColor != null) ? playerColor : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);
             } catch (NumberFormatException ignored) {
@@ -113,7 +114,7 @@ public class ChessClient {
             try {
                 var gameID = Integer.parseInt(params[0]);
                 var joinInformation = new JoinInformation(null, gameID);
-                server.joinGame(joinInformation);
+                server.joinGame(joinInformation, authData.authToken());
                 return String.format("Observing game %d", gameID);
             } catch (NumberFormatException ignored) {
             }

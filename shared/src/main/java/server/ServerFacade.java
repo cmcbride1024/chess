@@ -21,47 +21,54 @@ public class ServerFacade {
 
     public AuthData login(LoginRequest loginRequest) throws ResponseException {
         var path = "/session";
-        return makeRequest("POST", path, loginRequest, AuthData.class);
+        return makeRequest("POST", path, null, loginRequest, AuthData.class);
     }
 
     public AuthData register(UserData userData) throws ResponseException {
         var path = "/user";
-        return makeRequest("POST", path, userData, AuthData.class);
+        return makeRequest("POST", path, null, userData, AuthData.class);
     }
 
-    public GameID createGame(String gameName) throws ResponseException {
+    public GameID createGame(String gameName, String authToken) throws ResponseException {
         var path = "/game";
-        return makeRequest("POST", path, gameName, GameID.class);
+        return makeRequest("POST", path, authToken, gameName, GameID.class);
     }
 
-    public GameList listGames() throws ResponseException {
+    public GameList listGames(String authToken) throws ResponseException {
         var path = "/game";
-        return makeRequest("GET", path, null, GameList.class);
+        return makeRequest("GET", path, authToken, null, GameList.class);
     }
 
-    public void joinGame(JoinInformation joinInformation) throws ResponseException {
+    public void joinGame(JoinInformation joinInformation, String authToken) throws ResponseException {
         var path = "/game";
-        makeRequest("POST", path, joinInformation, null);
+        makeRequest("POST", path, authToken, joinInformation, null);
     }
 
     public void logout(String authToken) throws ResponseException {
         var path = "/session";
-        makeRequest("DELETE", path, authToken, null);
+        makeRequest("DELETE", path, authToken, null, null);
     }
 
-    private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
+    private <T> T makeRequest(String method, String path, String authToken, Object request, Class<T> responseClass) throws ResponseException {
         try {
             URL url = (new URI(serverUrl + path)).toURL();
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
             http.setRequestMethod(method);
             http.setDoOutput(true);
 
+            writeHeader(authToken, http);
             writeBody(request, http);
             http.connect();
             throwIfNotSuccessful(http);
             return readBody(http, responseClass);
         } catch (Exception ex) {
             throw new ResponseException(500, ex.getMessage());
+        }
+    }
+
+    private void writeHeader(String authToken, HttpURLConnection http) {
+        if (authToken != null) {
+            http.addRequestProperty("authorization", authToken);
         }
     }
 
