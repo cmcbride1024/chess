@@ -71,8 +71,8 @@ public class ChessClient {
         assertSignedIn();
         if (params.length >= 1) {
             var gameName = params[0];
-            server.createGame(gameName);
-            return String.format("Game '%s' has been created", gameName);
+            var gameID = server.createGame(gameName).gameID();
+            return String.format("Game '%s' has been created with ID: %d", gameName, gameID);
         }
         throw new ResponseException(400, "Expected: <NAME>");
     }
