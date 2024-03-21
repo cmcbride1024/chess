@@ -26,7 +26,7 @@ public class ServerFacadeTests {
     }
 
     @BeforeEach
-    public void clearDatabase() throws ResponseException {
+    public void resetDatabase() throws ResponseException {
         facade.clearDatabase();
     }
 
@@ -78,11 +78,99 @@ public class ServerFacadeTests {
     }
 
     @Test
-    void createGameWithoutAuthorization() {
+    void createGamesUnauthorized() {
         assertThrows(
                 ResponseException.class,
                 () -> facade.createGame(new GameName("game1"), UUID.randomUUID().toString()),
-                "server should not create a game random UUID."
+                "server should not create a game for an unauthorized user."
         );
+    }
+
+    @Test
+    void listGames() throws ResponseException {
+        var authData = facade.register(sampleData);
+        facade.createGame(new GameName("game1"), authData.authToken());
+        var games = facade.listGames(authData.authToken());
+        assertFalse(games.gameList().isEmpty());
+    }
+
+    @Test
+    void listGamesUnauthorized() {
+        assertThrows(
+                ResponseException.class,
+                () -> facade.listGames(UUID.randomUUID().toString()),
+                "server should not list games for an unauthorized user."
+        );
+    }
+
+    @Test
+    void joinGame() throws ResponseException {
+        var authData = facade.register(sampleData);
+        var id = facade.createGame(new GameName("game1"), authData.authToken());
+        var joinInformation = new JoinInformation("white", id.gameID());
+        facade.joinGame(joinInformation, authData.authToken());
+        var games = facade.listGames(authData.authToken());
+        for (var game : games.gameList()) {
+            assertEquals(game.whiteUsername(), sampleData.username());
+        }
+    }
+
+    @Test
+    void joinGameUnauthorized() throws ResponseException {
+        var authData = facade.register(sampleData);
+        var id = facade.createGame(new GameName("game1"), authData.authToken());
+        var joinInformation = new JoinInformation("white", id.gameID());
+        assertThrows(
+                ResponseException.class,
+                () -> facade.joinGame(joinInformation, UUID.randomUUID().toString()),
+                "server should not let an unauthorized user join a game."
+        );
+
+        var newJoinInformation = new JoinInformation("white", 1515);
+        assertThrows(
+                ResponseException.class,
+                () -> facade.joinGame(newJoinInformation, authData.authToken()),
+                "server should not you join a non-existent game."
+        );
+    }
+
+    @Test
+    void logout() throws ResponseException {
+        var authData = facade.register(sampleData);
+        facade.logout(authData.authToken());
+        assertThrows(
+                ResponseException.class,
+                () -> facade.listGames(authData.authToken()),
+                "server should not list games for someone who logged in then logged out."
+        );
+    }
+
+    @Test
+    void logoutNonExistentUser() {
+        assertThrows(
+                ResponseException.class,
+                () -> facade.logout(UUID.randomUUID().toString()),
+                "server shouldn't let someone not registered log out."
+        );
+    }
+
+    @Test
+    void clearDatabase() throws ResponseException {
+        facade.register(sampleData);
+        facade.clearDatabase();
+        var loginRequest = new LoginRequest(sampleData.username(), sampleData.password());
+        assertThrows(
+                ResponseException.class,
+                () -> facade.login(loginRequest),
+                "clearing the database should remove login credentials."
+        );
+    }
+
+    @Test
+    void clearEmptyDatabase() throws ResponseException {
+        facade.clearDatabase();
+        var authData = facade.register(sampleData);
+        var games = facade.listGames(authData.authToken());
+        assertEquals(0, games.gameList().size());
     }
 }
