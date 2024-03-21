@@ -2,7 +2,7 @@ package server;
 
 import com.google.gson.Gson;
 import exception.ResponseException;
-import model.AuthData;
+import model.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,12 +14,39 @@ import java.net.URL;
 
 public class ServerFacade {
     private final String serverUrl;
+
     public ServerFacade(String url) {
         this.serverUrl = url;
     }
 
-    public AuthData register(String username, String password, String email) {
-        return null;
+    public AuthData login(LoginRequest loginRequest) throws ResponseException {
+        var path = "/session";
+        return makeRequest("POST", path, loginRequest, AuthData.class);
+    }
+
+    public AuthData register(UserData userData) throws ResponseException {
+        var path = "/user";
+        return makeRequest("POST", path, userData, AuthData.class);
+    }
+
+    public GameID createGame(String gameName) throws ResponseException {
+        var path = "/game";
+        return makeRequest("POST", path, gameName, GameID.class);
+    }
+
+    public GameList listGames() throws ResponseException {
+        var path = "/game";
+        return makeRequest("GET", path, null, GameList.class);
+    }
+
+    public void joinGame(JoinInformation joinInformation) throws ResponseException {
+        var path = "/game";
+        makeRequest("POST", path, joinInformation, null);
+    }
+
+    public void logout(String authToken) throws ResponseException {
+        var path = "/session";
+        makeRequest("DELETE", path, authToken, null);
     }
 
     private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {

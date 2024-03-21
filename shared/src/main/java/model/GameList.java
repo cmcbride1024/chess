@@ -2,4 +2,5 @@ package model;
 
 import java.util.Collection;
 
-public record GameList(Collection<GameSummary> games) {}
+public record GameList(Collection<GameSummary> gameList) {
+}

@@ -4,18 +4,18 @@ import com.google.gson.Gson;
 
 import exception.ResponseException;
 import server.ServerFacade;
+import model.*;
 
 import java.util.Arrays;
 
 public class ChessClient {
     private String loggedInUser = null;
-    private final String serverUrl;
+    private AuthData authData = null;
     private final ServerFacade server;
     private State state = State.SIGNEDOUT;
 
     public ChessClient(String serverUrl) {
         server = new ServerFacade(serverUrl);
-        this.serverUrl = serverUrl;
     }
 
     public String eval(String input) {
@@ -44,7 +44,8 @@ public class ChessClient {
         if (params.length >= 2) {
             var username = params[0];
             var password = params[1];
-            server.login(username, password);
+            var userLogin = new LoginRequest(username, password);
+            authData = server.login(userLogin);
             loggedInUser = username;
             state = State.SIGNEDIN;
             return String.format("Welcome %s", username);
@@ -57,10 +58,11 @@ public class ChessClient {
             var username = params[0];
             var password = params[1];
             var email = params[2];
-            server.register(username, password, email);
+            var newUser = new UserData(username, password, email);
+            authData = server.register(newUser);
             loggedInUser = username;
             state = State.SIGNEDIN;
-            return String.format("Account has been created for %s", username);
+            return String.format("Account has been created for %s. You are now logged in", username);
         }
         throw new ResponseException(400, "Expected: <USERNAME> <PASSWORD> <EMAIL>");
     }
@@ -80,7 +82,7 @@ public class ChessClient {
         var games = server.listGames();
         var result = new StringBuilder();
         var gson = new Gson();
-        for (var game : games) {
+        for (var game : games.gameList()) {
             result.append(gson.toJson(game)).append('\n');
         }
         return result.toString();
@@ -95,8 +97,8 @@ public class ChessClient {
                 if (params.length == 2) {
                     playerColor = params[1];
                 }
-
-                server.joinGame(gameID, playerColor);
+                var joinInformation = new JoinInformation(playerColor, gameID);
+                server.joinGame(joinInformation);
                 var joinedUser = (playerColor != null) ? playerColor : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);
             } catch (NumberFormatException ignored) {
@@ -110,7 +112,8 @@ public class ChessClient {
         if (params.length >= 1) {
             try {
                 var gameID = Integer.parseInt(params[0]);
-                server.joinGame(gameID, null);
+                var joinInformation = new JoinInformation(null, gameID);
+                server.joinGame(joinInformation);
                 return String.format("Observing game %d", gameID);
             } catch (NumberFormatException ignored) {
             }
@@ -122,6 +125,8 @@ public class ChessClient {
         assertSignedIn();
         var leavingUser = loggedInUser;
         loggedInUser = null;
+        server.logout(authData.authToken());
+        authData = null;
         state = State.SIGNEDOUT;
         return String.format("%s logged out successfully", leavingUser);
     }

@@ -206,17 +206,3 @@ public class Server {
         Spark.awaitStop();
     }
 }
-
-record JsonMessage(String message) {}
-
-record LoginRequest(String username, String password) {}
-
-record GameSummary(Integer gameID, String whiteUsername, String blackUsername, String gameName) {}
-
-record GameList(Collection<GameSummary> games) {}
-
-record GameName(String gameName) {}
-
-record GameID(Integer gameID) {}
-
-record JoinInformation(String playerColor, Integer gameID) {}
