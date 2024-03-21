@@ -207,7 +207,7 @@ public class MySqlDataAccess implements DataAccess {
     public void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID, ResponseException, SQLException {
         for (GameData game : getGames()) {
             if (game.gameID() == gameID && playerColor != null) {
-                switch(playerColor) {
+                switch(playerColor.toUpperCase()) {
                     case "WHITE":
                         if (game.whiteUsername() != null) {
                             throw new DataAccessException("Player has already joined as white.");

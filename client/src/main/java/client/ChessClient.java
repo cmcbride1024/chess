@@ -9,6 +9,7 @@ import static ui.EscapeSequences.*;
 
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class ChessClient {
     private String loggedInUser = null;
@@ -102,6 +103,8 @@ public class ChessClient {
                 }
                 var joinInformation = new JoinInformation(playerColor, gameID);
                 server.joinGame(joinInformation, authData.authToken());
+                System.out.println(boardLayout("white"));
+                System.out.println(boardLayout("black"));
                 var joinedUser = (playerColor != null) ? playerColor : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);
             } catch (NumberFormatException ignored) {
@@ -117,6 +120,8 @@ public class ChessClient {
                 var gameID = Integer.parseInt(params[0]);
                 var joinInformation = new JoinInformation(null, gameID);
                 server.joinGame(joinInformation, authData.authToken());
+                System.out.println(boardLayout("white"));
+                System.out.println(boardLayout("black"));
                 return String.format("Observing game %d", gameID);
             } catch (NumberFormatException ignored) {
             }
@@ -134,7 +139,6 @@ public class ChessClient {
         return String.format("%s logged out successfully", leavingUser);
     }
 
-
     public String help() {
         if (state == State.SIGNEDOUT) {
             return SET_TEXT_COLOR_BLUE + "register <USERNAME> <PASSWORD> <EMAIL>" + SET_TEXT_COLOR_WHITE + " - to create an account\n" +
@@ -149,6 +153,51 @@ public class ChessClient {
             SET_TEXT_COLOR_BLUE + "logout" + SET_TEXT_COLOR_WHITE + " - when you are done\n" +
             SET_TEXT_COLOR_BLUE + "quit" + SET_TEXT_COLOR_WHITE + " - playing chess\n" +
             SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands";
+    }
+
+    private String chessCharacterLookup(int row, int col) {
+        String[] pieces = {"R", "N", "B", "Q", "K", "B", "N", "R"};
+        int adjustedCol = col - 1;
+        String piece = (row == 1 || row == 8 || row == 2 || row == 7) ? pieces[adjustedCol] : " ";
+
+        if (row == 1) {
+            // Black pieces
+            return piece.equals(" ") ? piece : SET_TEXT_COLOR_BLACK + piece + RESET_TEXT_COLOR;
+        } else if (row == 8) {
+            // White pieces
+            return piece.equals(" ") ? piece : SET_TEXT_COLOR_WHITE + piece + RESET_TEXT_COLOR;
+        }
+
+        // Pawns
+        if (row == 2) {
+            // Black pawns
+            return SET_TEXT_COLOR_BLACK + "P" + RESET_TEXT_COLOR;
+        } else if (row == 7) {
+            // White pawns
+            return SET_TEXT_COLOR_WHITE + "P" + RESET_TEXT_COLOR;
+        }
+        return " ";
+    }
+
+    public String boardLayout(String playerColor) {
+        var boards = new StringBuilder();
+        for (int row = 0; row <= 9; row++) {
+            for (int col = 0; col <= 9; col++) {
+                if (row == 0 || col == 0 || row == 9 || col == 9) {
+                    boards.append(SET_BG_COLOR_LIGHT_GREY).append("   ").append(RESET_BG_COLOR);
+                } else {
+                    int newRow = (Objects.equals(playerColor, "white")) ? row : 9 - row;
+                    int newCol = (Objects.equals(playerColor, "white")) ? col : 9 - col;
+                    boolean isDark = (row + col) % 2 == 1;
+                    String bgColor = isDark ? SET_BG_COLOR + "95m" : SET_BG_COLOR + "222m";
+                    String chessCharacter = chessCharacterLookup(newRow, newCol);
+
+                    boards.append(bgColor).append(String.format(" %s ", chessCharacter)).append(RESET_BG_COLOR);
+                }
+            }
+            boards.append('\n').append(SET_TEXT_COLOR_WHITE).append(RESET_BG_COLOR);
+        }
+        return boards.toString();
     }
 
     public State isLoggedIn() {
