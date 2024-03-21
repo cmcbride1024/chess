@@ -1,10 +1,8 @@
 import chess.*;
-import dataAccess.DataAccessException;
-import exception.ResponseException;
 import client.*;
 
-public class Main {
-    public static void main(String[] args) throws ResponseException, DataAccessException {
+public class ServerMain {
+    public static void main(String[] args) {
         Server server = new Server();
         int port = 8080;
         server.run(port);
