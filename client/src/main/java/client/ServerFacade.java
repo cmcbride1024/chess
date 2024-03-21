@@ -3,9 +3,9 @@ package client;
 import model.AuthData;
 
 public class ServerFacade {
-    private final int port;
-    public ServerFacade(int port) {
-        this.port = port;
+    private final String serverUrl;
+    public ServerFacade(String url) {
+        this.serverUrl = url;
     }
 
     public AuthData register(String username, String password, String email) {

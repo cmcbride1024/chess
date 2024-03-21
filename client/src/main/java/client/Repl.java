@@ -1,55 +1,37 @@
 package client;
 
 import java.util.Scanner;
+import static ui.EscapeSequences.*;
 import client.*;
 
 public class Repl {
-    static String loggedOutHelp = """
-            register <USERNAME> <PASSWORD> <EMAIL> - to create an account
-            login <USERNAME> <PASSWORD> - to play chess
-            quit - playing chess
-            help - with possible commands
-            
-            """;
-    static String loggedInHelp = """
-            create <NAME> - a game
-            list - games
-            join <ID> [WHITE|BLACK|<empty>] - a game
-            observe <ID> - a game
-            logout - when you are done
-            quit - playing chess
-            help - with possible commands
-            
-            """;
-    ChessClient client = new ChessClient();
-    public static void main(String[] args) {
-        boolean loggedIn = false;
-        System.out.println(" \uD83D\uDC51 Welcome to 240 chess. Type Help to get started. \uD83D\uDC51");
+    private final ChessClient client;
 
-        while (true) {
-            String linePrefix = (loggedIn ? "[LOGGED_IN]" : "[LOGGED_OUT]");
-            System.out.print(linePrefix + " >>> ");
-
-            Scanner scanner = new Scanner(System.in);
-            String sentence = scanner.nextLine();
-
-            String[] words = sentence.trim().split("\\s+");
-
-            String firstWord;
-            if (words.length > 0) {
-                firstWord = words[0];
-            } else {
-                firstWord = "";
-            }
-
-            switch(firstWord.toLowerCase()) {
-                case "help" -> System.out.println(printHelpText(loggedIn));
-                default -> System.out.println("Command not recognized. Type 'help' for list of commands.");
-            };
-        }
+    public Repl(String serverUrl) {
+        client = new ChessClient(serverUrl);
     }
 
-    private static String printHelpText(boolean loggedIn) {
-        return (loggedIn ? loggedInHelp : loggedOutHelp);
+    public void run() {
+        System.out.println(" \uD83D\uDC51 Welcome to 240 chess. Type Help to get started. \uD83D\uDC51");
+        Scanner scanner = new Scanner(System.in);
+        var result = "";
+
+        while (!result.equals("quit")) {
+            printPrompt();
+            String line = scanner.nextLine();
+
+            try {
+                result = client.eval(line);
+                System.out.print(result);
+            } catch (Throwable e) {
+                var msg = e.toString();
+                System.out.print(msg);
+            }
+        }
+        System.out.println();
+    }
+
+    private void printPrompt() {
+        System.out.print("\n" + ERASE_SCREEN + ">>> ");
     }
 }
