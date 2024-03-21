@@ -2,7 +2,6 @@ package client;
 
 import java.util.Scanner;
 import static ui.EscapeSequences.*;
-import client.*;
 
 public class Repl {
     private final ChessClient client;
@@ -12,7 +11,7 @@ public class Repl {
     }
 
     public void run() {
-        System.out.println(" \uD83D\uDC51 Welcome to 240 chess. Type Help to get started. \uD83D\uDC51");
+        System.out.println(SET_TEXT_COLOR_WHITE + " \uD83D\uDC51 Welcome to 240 chess. Type Help to get started. \uD83D\uDC51");
         Scanner scanner = new Scanner(System.in);
         var result = "";
 

@@ -5,6 +5,8 @@ import com.google.gson.Gson;
 import exception.ResponseException;
 import server.ServerFacade;
 import model.*;
+import static ui.EscapeSequences.*;
+
 
 import java.util.Arrays;
 
@@ -60,7 +62,6 @@ public class ChessClient {
             var email = params[2];
             var newUser = new UserData(username, password, email);
             authData = server.register(newUser);
-            System.out.println(authData.authToken());
             loggedInUser = username;
             state = State.SIGNEDIN;
             return String.format("Account has been created for %s. You are now logged in", username);
@@ -71,9 +72,10 @@ public class ChessClient {
     public String createGame(String... params) throws ResponseException {
         assertSignedIn();
         if (params.length >= 1) {
-            var gameName = params[0];
+            var name = params[0];
+            var gameName = new GameName(name);
             var gameID = server.createGame(gameName, authData.authToken()).gameID();
-            return String.format("Game '%s' has been created with ID: %d", gameName, gameID);
+            return String.format("Game '%s' has been created with ID: %d", gameName.gameName(), gameID);
         }
         throw new ResponseException(400, "Expected: <NAME>");
     }
@@ -135,22 +137,18 @@ public class ChessClient {
 
     public String help() {
         if (state == State.SIGNEDOUT) {
-            return """
-            register <USERNAME> <PASSWORD> <EMAIL> - to create an account
-            login <USERNAME> <PASSWORD> - to play chess
-            quit - playing chess
-            help - with possible commands
-            """;
+            return SET_TEXT_COLOR_BLUE + "register <USERNAME> <PASSWORD> <EMAIL>" + SET_TEXT_COLOR_WHITE + " - to create an account\n" +
+                SET_TEXT_COLOR_BLUE + "login <USERNAME> <PASSWORD>" + SET_TEXT_COLOR_WHITE + " - to play chess\n" +
+                SET_TEXT_COLOR_BLUE + "quit" + SET_TEXT_COLOR_WHITE + " - playing chess\n" +
+                SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands";
         }
-        return """
-            create <NAME> - a game
-            list - games
-            join <ID> [WHITE|BLACK|<empty>] - a game
-            observe <ID> - a game
-            logout - when you are done
-            quit - playing chess
-            help - with possible commands
-            """;
+        return SET_TEXT_COLOR_BLUE + "create <NAME>" + SET_TEXT_COLOR_WHITE + " - a game\n" +
+            SET_TEXT_COLOR_BLUE + "list" + SET_TEXT_COLOR_WHITE + " - games\n" +
+            SET_TEXT_COLOR_BLUE + "join <ID> [WHITE|BLACK|<empty>]" + SET_TEXT_COLOR_WHITE + " - a game\n" +
+            SET_TEXT_COLOR_BLUE + "observe <ID>" + SET_TEXT_COLOR_WHITE + " - a game\n" +
+            SET_TEXT_COLOR_BLUE + "logout" + SET_TEXT_COLOR_WHITE + " - when you are done\n" +
+            SET_TEXT_COLOR_BLUE + "quit" + SET_TEXT_COLOR_WHITE + " - playing chess\n" +
+            SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands";
     }
 
     public State isLoggedIn() {

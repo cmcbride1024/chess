@@ -29,7 +29,7 @@ public class ServerFacade {
         return makeRequest("POST", path, null, userData, AuthData.class);
     }
 
-    public GameID createGame(String gameName, String authToken) throws ResponseException {
+    public GameID createGame(GameName gameName, String authToken) throws ResponseException {
         var path = "/game";
         return makeRequest("POST", path, authToken, gameName, GameID.class);
     }
@@ -41,7 +41,7 @@ public class ServerFacade {
 
     public void joinGame(JoinInformation joinInformation, String authToken) throws ResponseException {
         var path = "/game";
-        makeRequest("POST", path, authToken, joinInformation, null);
+        makeRequest("PUT", path, authToken, joinInformation, null);
     }
 
     public void logout(String authToken) throws ResponseException {
