@@ -156,12 +156,10 @@ public class ChessClient {
     }
 
     private String chessCharacterLookup(int row, int col) {
-        String[] pieces = {"R", "N", "B", "Q", "K", "B", "N", "R"};
-        int adjustedCol = col - 1;
-        String piece = (row == 1 || row == 8 || row == 2 || row == 7) ? pieces[adjustedCol] : " ";
+        String piece = getLabel(row, col);
 
-        if (row == 1) {
-            // Black pieces
+        if (row == 1 || row == 0 || row == 9 || col == 0 || col == 9) {
+            // Black pieces and labels
             return piece.equals(" ") ? piece : SET_TEXT_COLOR_BLACK + piece + RESET_TEXT_COLOR;
         } else if (row == 8) {
             // White pieces
@@ -179,23 +177,39 @@ public class ChessClient {
         return " ";
     }
 
+    private static String getLabel(int row, int col) {
+        String[] pieces = {"R", "N", "B", "Q", "K", "B", "N", "R"};
+        String[] columnLabels = {" ", "a", "b", "c", "d", "e", "f", "g", "h", " "};
+        String[] rowLabels = {" ", "8", "7", "6", "5", "4", "3", "2", "1", " "};
+        int adjustedCol = col - 1;
+        String piece = " ";
+        if (row == 0 || row == 9) {
+            piece = columnLabels[col];
+        } else if (col == 0 || col == 9) {
+            piece = rowLabels[row];
+        } else if (row == 1 || row == 8 || row == 2 || row == 7) {
+            piece = pieces[adjustedCol];
+        }
+        return piece;
+    }
+
     public String boardLayout(String playerColor) {
         var boards = new StringBuilder();
         for (int row = 0; row <= 9; row++) {
             for (int col = 0; col <= 9; col++) {
+                int newRow = (Objects.equals(playerColor, "white")) ? row : 9 - row;
+                int newCol = (Objects.equals(playerColor, "white")) ? col : 9 - col;
+                String chessCharacter = chessCharacterLookup(newRow, newCol);
                 if (row == 0 || col == 0 || row == 9 || col == 9) {
-                    boards.append(SET_BG_COLOR_LIGHT_GREY).append("   ").append(RESET_BG_COLOR);
+                    boards.append(SET_BG_COLOR_LIGHT_GREY).append(String.format(" %s ", chessCharacter)).append("\u001B[49m");
                 } else {
-                    int newRow = (Objects.equals(playerColor, "white")) ? row : 9 - row;
-                    int newCol = (Objects.equals(playerColor, "white")) ? col : 9 - col;
                     boolean isDark = (row + col) % 2 == 1;
                     String bgColor = isDark ? SET_BG_COLOR + "95m" : SET_BG_COLOR + "222m";
-                    String chessCharacter = chessCharacterLookup(newRow, newCol);
 
-                    boards.append(bgColor).append(String.format(" %s ", chessCharacter)).append(RESET_BG_COLOR);
+                    boards.append(bgColor).append(String.format(" %s ", chessCharacter)).append("\u001B[49m");
                 }
             }
-            boards.append('\n').append(SET_TEXT_COLOR_WHITE).append(RESET_BG_COLOR);
+            boards.append('\n').append(SET_TEXT_COLOR_WHITE).append("\u001B[49m");
         }
         return boards.toString();
     }
