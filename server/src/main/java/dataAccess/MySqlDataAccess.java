@@ -186,7 +186,6 @@ public class MySqlDataAccess implements DataAccess {
     @Override
     public void deleteAuth(AuthData auth) throws DataAccessException, ResponseException {
         String statement = "DELETE FROM authTokens WHERE authData=?";
-        System.out.println(auth);
         executeUpdate(statement, auth);
     }
 

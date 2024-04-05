@@ -3,7 +3,7 @@ package clientTests;
 import exception.ResponseException;
 import model.*;
 import org.junit.jupiter.api.*;
-import client.Server;
+import server.Server;
 import server.ServerFacade;
 
 import java.util.UUID;
@@ -90,8 +90,8 @@ public class ServerFacadeTests {
     void listGames() throws ResponseException {
         var authData = facade.register(sampleData);
         facade.createGame(new GameName("game1"), authData.authToken());
-        var games = facade.listGames(authData.authToken());
-        assertFalse(games.gameList().isEmpty());
+        var gameList = facade.listGames(authData.authToken());
+        assertFalse(gameList.games().isEmpty());
     }
 
     @Test
@@ -109,8 +109,8 @@ public class ServerFacadeTests {
         var id = facade.createGame(new GameName("game1"), authData.authToken());
         var joinInformation = new JoinInformation("white", id.gameID());
         facade.joinGame(joinInformation, authData.authToken());
-        var games = facade.listGames(authData.authToken());
-        for (var game : games.gameList()) {
+        var gameList = facade.listGames(authData.authToken());
+        for (var game : gameList.games()) {
             assertEquals(game.whiteUsername(), sampleData.username());
         }
     }
@@ -170,7 +170,7 @@ public class ServerFacadeTests {
     void clearEmptyDatabase() throws ResponseException {
         facade.clearDatabase();
         var authData = facade.register(sampleData);
-        var games = facade.listGames(authData.authToken());
-        assertEquals(0, games.gameList().size());
+        var gameList = facade.listGames(authData.authToken());
+        assertEquals(0, gameList.games().size());
     }
 }

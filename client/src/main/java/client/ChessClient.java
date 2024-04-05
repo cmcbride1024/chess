@@ -86,7 +86,7 @@ public class ChessClient {
         var games = server.listGames(authData.authToken());
         var result = new StringBuilder();
         var gson = new Gson();
-        for (var game : games.gameList()) {
+        for (var game : games.games()) {
             result.append(gson.toJson(game)).append('\n');
         }
         return result.toString();
@@ -144,7 +144,7 @@ public class ChessClient {
             return SET_TEXT_COLOR_BLUE + "register <USERNAME> <PASSWORD> <EMAIL>" + SET_TEXT_COLOR_WHITE + " - to create an account\n" +
                 SET_TEXT_COLOR_BLUE + "login <USERNAME> <PASSWORD>" + SET_TEXT_COLOR_WHITE + " - to play chess\n" +
                 SET_TEXT_COLOR_BLUE + "quit" + SET_TEXT_COLOR_WHITE + " - playing chess\n" +
-                SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands";
+                SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands\n";
         }
         return SET_TEXT_COLOR_BLUE + "create <NAME>" + SET_TEXT_COLOR_WHITE + " - a game\n" +
             SET_TEXT_COLOR_BLUE + "list" + SET_TEXT_COLOR_WHITE + " - games\n" +
@@ -152,7 +152,7 @@ public class ChessClient {
             SET_TEXT_COLOR_BLUE + "observe <ID>" + SET_TEXT_COLOR_WHITE + " - a game\n" +
             SET_TEXT_COLOR_BLUE + "logout" + SET_TEXT_COLOR_WHITE + " - when you are done\n" +
             SET_TEXT_COLOR_BLUE + "quit" + SET_TEXT_COLOR_WHITE + " - playing chess\n" +
-            SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands";
+            SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands\n";
     }
 
     private String chessCharacterLookup(int row, int col) {
@@ -166,7 +166,6 @@ public class ChessClient {
             return piece.equals(" ") ? piece : SET_TEXT_COLOR_WHITE + piece + RESET_TEXT_COLOR;
         }
 
-        // Pawns
         if (row == 2) {
             // Black pawns
             return SET_TEXT_COLOR_BLACK + "P" + RESET_TEXT_COLOR;
@@ -178,17 +177,16 @@ public class ChessClient {
     }
 
     private static String getLabel(int row, int col) {
-        String[] pieces = {"R", "N", "B", "Q", "K", "B", "N", "R"};
+        String[] pieces = {" ", "R", "N", "B", "Q", "K", "B", "N", "R", " "};
         String[] columnLabels = {" ", "a", "b", "c", "d", "e", "f", "g", "h", " "};
         String[] rowLabels = {" ", "8", "7", "6", "5", "4", "3", "2", "1", " "};
-        int adjustedCol = col - 1;
         String piece = " ";
         if (row == 0 || row == 9) {
             piece = columnLabels[col];
         } else if (col == 0 || col == 9) {
             piece = rowLabels[row];
         } else if (row == 1 || row == 8 || row == 2 || row == 7) {
-            piece = pieces[adjustedCol];
+            piece = pieces[col];
         }
         return piece;
     }
@@ -201,13 +199,14 @@ public class ChessClient {
                 int newCol = (Objects.equals(playerColor, "white")) ? col : 9 - col;
                 String chessCharacter = chessCharacterLookup(newRow, newCol);
                 if (row == 0 || col == 0 || row == 9 || col == 9) {
-                    boards.append(SET_BG_COLOR_LIGHT_GREY).append(String.format(" %s ", chessCharacter)).append("\u001B[49m");
+                    boards.append(SET_BG_COLOR_LIGHT_GREY);
                 } else {
                     boolean isDark = (row + col) % 2 == 1;
                     String bgColor = isDark ? SET_BG_COLOR + "95m" : SET_BG_COLOR + "222m";
 
-                    boards.append(bgColor).append(String.format(" %s ", chessCharacter)).append("\u001B[49m");
+                    boards.append(bgColor);
                 }
+                boards.append(String.format(" %s ", chessCharacter)).append("\u001B[49m");
             }
             boards.append('\n').append(SET_TEXT_COLOR_WHITE).append("\u001B[49m");
         }

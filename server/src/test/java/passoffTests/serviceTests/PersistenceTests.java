@@ -5,7 +5,7 @@ import org.junit.jupiter.api.*;
 import passoffTests.obfuscatedTestClasses.TestServerFacade;
 import passoffTests.testClasses.TestException;
 import passoffTests.testClasses.TestModels;
-import client.Server;
+import server.Server;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;

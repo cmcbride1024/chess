@@ -236,7 +236,6 @@ public class DataAccessTest {
             AuthData testAuth = service.register(testUser);
             service.createGame(testAuth.authToken(), "game1");
             service.joinGame(testAuth.authToken(), "BLACK", 5);
-            System.out.println(service.listGames(testAuth.authToken()));
 
             fail("Service shouldn't allow user to join game with invalid ID.");
         } catch (InvalidGameID e) {

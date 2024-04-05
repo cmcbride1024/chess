@@ -1,4 +1,4 @@
-package client;
+package server;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -122,7 +122,8 @@ public class Server {
             for (GameData game : gameList) {
                 gameSummaryCollection.add(new GameSummary(game.gameID(), game.whiteUsername(), game.blackUsername(), game.gameName()));
             }
-            return gson.toJson(new GameList(gameSummaryCollection));
+            var gameSummaryList = new GameList(gameSummaryCollection);
+            return gson.toJson(gameSummaryList);
 
         } catch (UnauthorizedException u) {
             res.status(401);
