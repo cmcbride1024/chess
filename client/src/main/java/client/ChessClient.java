@@ -1,12 +1,11 @@
 package client;
 
 import com.google.gson.Gson;
-
 import exception.ResponseException;
 import server.ServerFacade;
 import model.*;
 import static ui.EscapeSequences.*;
-
+import client.webSocket.*;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -15,10 +14,15 @@ public class ChessClient {
     private String loggedInUser = null;
     private AuthData authData = null;
     private final ServerFacade server;
+    private final String serverUrl;
+    private final NotificationHandler notificationHandler;
+    private WebSocketFacade ws;
     private State state = State.SIGNEDOUT;
 
-    public ChessClient(String serverUrl) {
+    public ChessClient(String serverUrl, NotificationHandler notificationHandler) {
         server = new ServerFacade(serverUrl);
+        this.serverUrl = serverUrl;
+        this.notificationHandler = notificationHandler;
     }
 
     public String eval(String input) {
