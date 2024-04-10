@@ -1,5 +1,6 @@
 package client;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
 import exception.ResponseException;
 import server.ServerFacade;
@@ -13,6 +14,7 @@ import java.util.Objects;
 public class ChessClient {
     private String loggedInUser = null;
     private AuthData authData = null;
+    private ChessGame.TeamColor playerColor = null;
     private final ServerFacade server;
     private final String serverUrl;
     private final NotificationHandler notificationHandler;
@@ -101,15 +103,28 @@ public class ChessClient {
         if (params.length >= 1) {
             try {
                 var gameID = Integer.parseInt(params[0]);
-                String playerColor = null;
+                String colorString = null;
                 if (params.length == 2) {
-                    playerColor = params[1];
+                    colorString = params[1];
+                    if (colorString.equalsIgnoreCase("white") || colorString.equalsIgnoreCase("black")) {
+                        playerColor = (colorString.equalsIgnoreCase("white")) ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+                    }
                 }
-                var joinInformation = new JoinInformation(playerColor, gameID);
+
+                var joinInformation = new JoinInformation(colorString, gameID);
                 server.joinGame(joinInformation, authData.authToken());
-                System.out.println(boardLayout("white"));
-                System.out.println(boardLayout("black"));
-                var joinedUser = (playerColor != null) ? playerColor : "observer";
+                ws = new WebSocketFacade(serverUrl, notificationHandler);
+
+                if (playerColor != null) {
+                    ws.joinGame(gameID, playerColor, authData.authToken());
+                } else {
+                    ws.observeGame(gameID, authData.authToken());
+                }
+
+                String boardString = (colorString == null || colorString.equalsIgnoreCase("white")) ? "white" : "black";
+                System.out.println(boardLayout(boardString));
+
+                var joinedUser = (colorString != null) ? colorString : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);
             } catch (NumberFormatException ignored) {
             }
@@ -124,8 +139,11 @@ public class ChessClient {
                 var gameID = Integer.parseInt(params[0]);
                 var joinInformation = new JoinInformation(null, gameID);
                 server.joinGame(joinInformation, authData.authToken());
+                ws = new WebSocketFacade(serverUrl, notificationHandler);
+                ws.observeGame(gameID, authData.authToken());
+
                 System.out.println(boardLayout("white"));
-                System.out.println(boardLayout("black"));
+
                 return String.format("Observing game %d", gameID);
             } catch (NumberFormatException ignored) {
             }

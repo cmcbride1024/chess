@@ -17,7 +17,6 @@ public class Repl implements NotificationHandler {
         System.out.println(SET_TEXT_COLOR_WHITE + " \uD83D\uDC51 Welcome to 240 chess. Type Help to get started. \uD83D\uDC51");
         Scanner scanner = new Scanner(System.in);
         var result = "";
-
         while (!result.equals("quit")) {
             printPrompt();
             String line = scanner.nextLine();
@@ -34,6 +33,8 @@ public class Repl implements NotificationHandler {
     }
 
     public void notify(ServerMessage serverMessage) {
+        System.out.println(SET_TEXT_COLOR_GREEN + serverMessage.getServerMessageType().toString());
+        printPrompt();
     }
 
     private void printPrompt() {
