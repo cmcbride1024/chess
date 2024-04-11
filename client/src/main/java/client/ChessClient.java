@@ -9,7 +9,6 @@ import static ui.EscapeSequences.*;
 import client.webSocket.*;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 public class ChessClient {
     private String loggedInUser = null;
@@ -17,7 +16,7 @@ public class ChessClient {
     private ChessGame.TeamColor playerColor = null;
     private boolean gameplayMode = false;
     private final ServerFacade server;
-    private final ChessGameplay gameplay;
+    private ChessGameplay gameplay;
     private final String serverUrl;
     private final NotificationHandler notificationHandler;
     private WebSocketFacade ws;
@@ -25,7 +24,6 @@ public class ChessClient {
 
     public ChessClient(String serverUrl, NotificationHandler notificationHandler) {
         server = new ServerFacade(serverUrl);
-        gameplay = new ChessGameplay();
         this.serverUrl = serverUrl;
         this.notificationHandler = notificationHandler;
     }
@@ -121,16 +119,14 @@ public class ChessClient {
                 var joinInformation = new JoinInformation(colorString, gameID);
                 server.joinGame(joinInformation, authData.authToken());
                 ws = new WebSocketFacade(serverUrl, notificationHandler);
-
                 if (playerColor != null) {
                     ws.joinGame(gameID, playerColor, authData.authToken());
                 } else {
                     ws.observeGame(gameID, authData.authToken());
                 }
 
-                String boardString = (colorString == null || colorString.equalsIgnoreCase("white")) ? "white" : "black";
-                System.out.println(boardLayout(boardString));
-
+                gameplay = new ChessGameplay(this, playerColor);
+                gameplayMode = true;
                 var joinedUser = (colorString != null) ? colorString : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);
             } catch (NumberFormatException ignored) {
@@ -148,8 +144,8 @@ public class ChessClient {
                 server.joinGame(joinInformation, authData.authToken());
                 ws = new WebSocketFacade(serverUrl, notificationHandler);
                 ws.observeGame(gameID, authData.authToken());
-
-                System.out.println(boardLayout("white"));
+                gameplay = new ChessGameplay(this, playerColor);
+                gameplayMode = true;
 
                 return String.format("Observing game %d", gameID);
             } catch (NumberFormatException ignored) {
@@ -184,62 +180,8 @@ public class ChessClient {
             SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands\n";
     }
 
-    private String chessCharacterLookup(int row, int col) {
-        String piece = getLabel(row, col);
-
-        if (row == 1 || row == 0 || row == 9 || col == 0 || col == 9) {
-            // Black pieces and labels
-            return piece.equals(" ") ? piece : SET_TEXT_COLOR_BLACK + piece + RESET_TEXT_COLOR;
-        } else if (row == 8) {
-            // White pieces
-            return piece.equals(" ") ? piece : SET_TEXT_COLOR_WHITE + piece + RESET_TEXT_COLOR;
-        }
-
-        if (row == 2) {
-            // Black pawns
-            return SET_TEXT_COLOR_BLACK + "P" + RESET_TEXT_COLOR;
-        } else if (row == 7) {
-            // White pawns
-            return SET_TEXT_COLOR_WHITE + "P" + RESET_TEXT_COLOR;
-        }
-        return " ";
-    }
-
-    private static String getLabel(int row, int col) {
-        String[] pieces = {" ", "R", "N", "B", "Q", "K", "B", "N", "R", " "};
-        String[] columnLabels = {" ", "a", "b", "c", "d", "e", "f", "g", "h", " "};
-        String[] rowLabels = {" ", "8", "7", "6", "5", "4", "3", "2", "1", " "};
-        String piece = " ";
-        if (row == 0 || row == 9) {
-            piece = columnLabels[col];
-        } else if (col == 0 || col == 9) {
-            piece = rowLabels[row];
-        } else if (row == 1 || row == 8 || row == 2 || row == 7) {
-            piece = pieces[col];
-        }
-        return piece;
-    }
-
-    public String boardLayout(String playerColor) {
-        var boards = new StringBuilder();
-        for (int row = 0; row <= 9; row++) {
-            for (int col = 0; col <= 9; col++) {
-                int newRow = (Objects.equals(playerColor, "white")) ? row : 9 - row;
-                int newCol = (Objects.equals(playerColor, "white")) ? col : 9 - col;
-                String chessCharacter = chessCharacterLookup(newRow, newCol);
-                if (row == 0 || col == 0 || row == 9 || col == 9) {
-                    boards.append(SET_BG_COLOR_LIGHT_GREY);
-                } else {
-                    boolean isDark = (row + col) % 2 == 1;
-                    String bgColor = isDark ? SET_BG_COLOR + "95m" : SET_BG_COLOR + "222m";
-
-                    boards.append(bgColor);
-                }
-                boards.append(String.format(" %s ", chessCharacter)).append("\u001B[49m");
-            }
-            boards.append('\n').append(SET_TEXT_COLOR_WHITE).append("\u001B[49m");
-        }
-        return boards.toString();
+    public void gameOver() {
+        gameplayMode = false;
     }
 
     public State isLoggedIn() {

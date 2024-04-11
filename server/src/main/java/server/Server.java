@@ -4,7 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import dataAccess.*;
+import exception.ResponseException;
 import model.*;
+import server.webSocket.WebSocketHandler;
 import service.UserService;
 import spark.*;
 
@@ -14,14 +16,18 @@ import java.util.HashSet;
 public class Server {
     private final Gson gson = new GsonBuilder().serializeNulls().create();
     private final UserService service = new UserService(new MySqlDataAccess());
+    private final WebSocketHandler webSocketHandler;
 
     public Server() {
+        webSocketHandler = new WebSocketHandler();
     }
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
 
         Spark.staticFiles.location("web");
+
+        Spark.webSocket("/connect", webSocketHandler);
 
         Spark.delete("/db", this::clearApplication);
         Spark.post("/user", this::registerUser);
@@ -30,6 +36,7 @@ public class Server {
         Spark.get("/game", this::listGames);
         Spark.post("/game", this::createGame);
         Spark.put("/game", this::joinGame);
+        Spark.exception(ResponseException.class, this::exceptionHandler);
 
         Spark.awaitInitialization();
         return Spark.port();
@@ -200,6 +207,10 @@ public class Server {
             res.status(500);
             return gson.toJson(new JsonMessage(String.format("Error: %s", error)));
         }
+    }
+
+    private void exceptionHandler(ResponseException ex, Request req, Response res) {
+        res.status(ex.getStatusCode());
     }
 
     public void stop() {
