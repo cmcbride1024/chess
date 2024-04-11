@@ -5,6 +5,10 @@ import client.webSocket.NotificationHandler;
 import client.webSocket.WebSocketFacade;
 import exception.ResponseException;
 import model.AuthData;
+import webSocketMessages.serverMessages.LoadGame;
+import webSocketMessages.serverMessages.Error;
+import webSocketMessages.serverMessages.Notification;
+import webSocketMessages.serverMessages.ServerMessage;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,21 +17,18 @@ import java.util.Objects;
 
 import static ui.EscapeSequences.*;
 
-public class ChessGameplay {
+public class ChessGameplay implements NotificationHandler {
     private ChessGame gameState;
     private final ChessGame.TeamColor playerColor;
     private final ChessClient client;
-    private WebSocketFacade ws;
-    private final NotificationHandler notificationHandler;
-    private final String serverUrl;
+    private final WebSocketFacade ws;
     private final AuthData authData;
     private final int gameID;
 
-    public ChessGameplay(ChessClient client, ChessGame.TeamColor playerColor, String serverUrl, NotificationHandler notificationHandler, AuthData authData, int gameID) {
+    public ChessGameplay(ChessClient client, ChessGame.TeamColor playerColor, String serverUrl, AuthData authData, int gameID) throws ResponseException {
         this.playerColor = playerColor;
         this.client = client;
-        this.serverUrl = serverUrl;
-        this.notificationHandler = notificationHandler;
+        ws = new WebSocketFacade(serverUrl, this);
         this.authData = authData;
         this.gameID = gameID;
     }
@@ -124,6 +125,14 @@ public class ChessGameplay {
         return board.toString();
     }
 
+    public void joinGame() throws ResponseException {
+        ws.joinGame(gameID, playerColor, authData.authToken());
+    }
+
+    public void observeGame() throws ResponseException {
+        ws.observeGame(gameID, authData.authToken());
+    }
+
     public String redrawBoard() {
         return boardLayout(playerColor, false, null);
     }
@@ -131,7 +140,6 @@ public class ChessGameplay {
     public String leaveGame(String... params) throws ResponseException {
         if (params.length >= 1) {
             int gameID = Integer.parseInt(params[0]);
-            ws = new WebSocketFacade(serverUrl, notificationHandler);
             ws.leaveGame(gameID, authData.authToken());
             client.gameOver();
 
@@ -168,7 +176,6 @@ public class ChessGameplay {
                 var startPosition = generatePosition(startPos);
                 var endPosition = generatePosition(endPos);
                 var newMove = new ChessMove(startPosition, endPosition, promotionPiece);
-                ws = new WebSocketFacade(serverUrl, notificationHandler);
                 ws.makeMove(gameID, newMove, authData.authToken());
 
                 String movingPiece = gameState.getBoard().getPiece(startPosition).toString();
@@ -179,7 +186,6 @@ public class ChessGameplay {
     }
 
     public String resignGame() throws ResponseException {
-        ws = new WebSocketFacade(serverUrl, notificationHandler);
         ws.resign(gameID, authData.authToken());
 
         return String.format("%s has resigned game %d", authData.username(), gameID);
@@ -201,5 +207,25 @@ public class ChessGameplay {
                 SET_TEXT_COLOR_BLUE + "resign" + SET_TEXT_COLOR_WHITE + " - to forfeit the game\n" +
                 SET_TEXT_COLOR_BLUE + "valid <POSITION>" + SET_TEXT_COLOR_WHITE + " - to show possible moves for a certain position\n" +
                 SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands\n";
+    }
+
+    @Override
+    public void notify(ServerMessage serverMessage) {
+        ServerMessage.ServerMessageType messageType = serverMessage.getServerMessageType();
+        switch (messageType) {
+            case LOAD_GAME -> {
+                LoadGame loadGame = (LoadGame) serverMessage;
+                gameState = loadGame.getGame();
+                System.out.println(boardLayout(playerColor, false, null));
+            }
+            case ERROR -> {
+                Error error = (Error) serverMessage;
+                System.out.println(SET_TEXT_COLOR_GREEN + error.getErrorMessage());
+            }
+            case NOTIFICATION -> {
+                Notification notification = (Notification) serverMessage;
+                System.out.println(SET_TEXT_COLOR_GREEN + notification.getMessage());
+            }
+        }
     }
 }

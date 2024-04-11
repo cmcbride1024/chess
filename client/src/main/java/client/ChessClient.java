@@ -6,7 +6,6 @@ import exception.ResponseException;
 import server.ServerFacade;
 import model.*;
 import static ui.EscapeSequences.*;
-import client.webSocket.*;
 
 import java.util.Arrays;
 
@@ -18,14 +17,11 @@ public class ChessClient {
     private final ServerFacade server;
     private ChessGameplay gameplay;
     private final String serverUrl;
-    private final NotificationHandler notificationHandler;
-    private WebSocketFacade ws;
     private State state = State.SIGNEDOUT;
 
-    public ChessClient(String serverUrl, NotificationHandler notificationHandler) {
+    public ChessClient(String serverUrl) {
         server = new ServerFacade(serverUrl);
         this.serverUrl = serverUrl;
-        this.notificationHandler = notificationHandler;
     }
 
     public String eval(String input) {
@@ -118,15 +114,15 @@ public class ChessClient {
 
                 var joinInformation = new JoinInformation(colorString, gameID);
                 server.joinGame(joinInformation, authData.authToken());
-                ws = new WebSocketFacade(serverUrl, notificationHandler);
-                if (playerColor != null) {
-                    ws.joinGame(gameID, playerColor, authData.authToken());
-                } else {
-                    ws.observeGame(gameID, authData.authToken());
-                }
 
-                gameplay = new ChessGameplay(this, playerColor, serverUrl, notificationHandler, authData, gameID);
+                gameplay = new ChessGameplay(this, playerColor, serverUrl, authData, gameID);
+                if (playerColor != null) {
+                    gameplay.joinGame();
+                } else {
+                    gameplay.observeGame();
+                }
                 gameplayMode = true;
+
                 var joinedUser = (colorString != null) ? colorString : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);
             } catch (NumberFormatException ignored) {
@@ -142,9 +138,9 @@ public class ChessClient {
                 var gameID = Integer.parseInt(params[0]);
                 var joinInformation = new JoinInformation(null, gameID);
                 server.joinGame(joinInformation, authData.authToken());
-                ws = new WebSocketFacade(serverUrl, notificationHandler);
-                ws.observeGame(gameID, authData.authToken());
-                gameplay = new ChessGameplay(this, playerColor, serverUrl, notificationHandler, authData, gameID);
+                gameplay = new ChessGameplay(this, playerColor, serverUrl, authData, gameID);
+
+                gameplay.observeGame();
                 gameplayMode = true;
 
                 return String.format("Observing game %d", gameID);
