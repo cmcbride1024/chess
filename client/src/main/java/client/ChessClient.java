@@ -125,7 +125,7 @@ public class ChessClient {
                     ws.observeGame(gameID, authData.authToken());
                 }
 
-                gameplay = new ChessGameplay(this, playerColor);
+                gameplay = new ChessGameplay(this, playerColor, serverUrl, notificationHandler, authData, gameID);
                 gameplayMode = true;
                 var joinedUser = (colorString != null) ? colorString : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);
@@ -144,7 +144,7 @@ public class ChessClient {
                 server.joinGame(joinInformation, authData.authToken());
                 ws = new WebSocketFacade(serverUrl, notificationHandler);
                 ws.observeGame(gameID, authData.authToken());
-                gameplay = new ChessGameplay(this, playerColor);
+                gameplay = new ChessGameplay(this, playerColor, serverUrl, notificationHandler, authData, gameID);
                 gameplayMode = true;
 
                 return String.format("Observing game %d", gameID);
