@@ -25,12 +25,9 @@ public class WebSocketFacade extends Endpoint {
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
             this.session = container.connectToServer(this, socketURI);
 
-            this.session.addMessageHandler(new MessageHandler.Whole<String>() {
-                @Override
-                public void onMessage(String message) {
-                     ServerMessage serverMessage = new Gson().fromJson(message, ServerMessage.class);
-                     notificationHandler.notify(serverMessage);
-                }
+            this.session.addMessageHandler((MessageHandler.Whole<String>) message -> {
+                 ServerMessage serverMessage = new Gson().fromJson(message, ServerMessage.class);
+                 notificationHandler.notify(serverMessage);
             });
         } catch (DeploymentException | IOException | URISyntaxException ex) {
             throw new ResponseException(500, ex.getMessage());
@@ -76,6 +73,7 @@ public class WebSocketFacade extends Endpoint {
             var leaveCommand = new Leave(authToken, gameID);
             leaveCommand.setCommandType(UserGameCommand.CommandType.LEAVE);
             this.session.getBasicRemote().sendText(new Gson().toJson(leaveCommand));
+            this.session.close();
         } catch (IOException ex) {
             throw new ResponseException(500, ex.getMessage());
         }

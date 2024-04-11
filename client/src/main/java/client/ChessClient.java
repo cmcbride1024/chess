@@ -15,7 +15,9 @@ public class ChessClient {
     private String loggedInUser = null;
     private AuthData authData = null;
     private ChessGame.TeamColor playerColor = null;
+    private boolean gameplayMode = false;
     private final ServerFacade server;
+    private final ChessGameplay gameplay;
     private final String serverUrl;
     private final NotificationHandler notificationHandler;
     private WebSocketFacade ws;
@@ -23,6 +25,7 @@ public class ChessClient {
 
     public ChessClient(String serverUrl, NotificationHandler notificationHandler) {
         server = new ServerFacade(serverUrl);
+        gameplay = new ChessGameplay();
         this.serverUrl = serverUrl;
         this.notificationHandler = notificationHandler;
     }
@@ -32,6 +35,10 @@ public class ChessClient {
             var tokens = input.toLowerCase().split(" ");
             var cmd = (tokens.length > 0) ? tokens[0] : "help";
             var params = Arrays.copyOfRange(tokens, 1, tokens.length);
+
+            if (gameplayMode) {
+                return gameplay.eval(tokens);
+            }
 
             return switch(cmd) {
                 case "login" -> login(params);
