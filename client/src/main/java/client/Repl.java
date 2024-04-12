@@ -30,8 +30,13 @@ public class Repl {
     }
 
     private void printPrompt() {
-        State loggedIn = client.isLoggedIn();
-        var startLine = (loggedIn.equals(State.SIGNEDIN)) ? "[LOGGED_IN]" : "[LOGGED_OUT]";
+        State loggedIn = client.getState();
+        var startLine = switch(loggedIn) {
+            case State.SIGNEDIN -> "[LOGGED_IN]";
+            case State.SIGNEDOUT -> "[LOGGED_OUT]";
+            case State.GAMEPLAY -> "[PLAYING]";
+            case State.OBSERVING -> "[OBSERVING]";
+        };
         System.out.print("\n" + ERASE_SCREEN + startLine + " >>> ");
     }
 }

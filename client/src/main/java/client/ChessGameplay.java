@@ -131,6 +131,7 @@ public class ChessGameplay implements NotificationHandler {
 
     public void observeGame() throws ResponseException {
         ws.observeGame(gameID, authData);
+        client.setState(State.OBSERVING);
     }
 
     public String redrawBoard() {
@@ -141,7 +142,7 @@ public class ChessGameplay implements NotificationHandler {
         if (params.length >= 1) {
             int gameID = Integer.parseInt(params[0]);
             ws.leaveGame(gameID, authData);
-            client.gameOver();
+            client.setState(State.SIGNEDIN);
 
             return String.format("%s has left game %d", authData.username(), gameID);
         }

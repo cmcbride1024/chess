@@ -190,19 +190,6 @@ public class MySqlDataAccess implements DataAccess {
         executeUpdate(statement, auth);
     }
 
-    private void deleteGame(GameData gameData) throws DataAccessException, ResponseException {
-        try (var conn = DatabaseManager.getConnection()) {
-            String statement = "DELETE FROM games WHERE gameID=?";
-            int gameID = gameData.getGameID();
-            try (var ps = conn.prepareStatement(statement)) {
-                ps.setInt(1, gameID);
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
-        }
-    }
-
     @Override
     public void updateGame(GameData gameData) throws DataAccessException, ResponseException {
         String statement = "UPDATE games SET gameData = ? WHERE gameID = ?";
@@ -233,30 +220,28 @@ public class MySqlDataAccess implements DataAccess {
 
     @Override
     public void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID, ResponseException, SQLException {
-        for (GameData game : getGames()) {
-            if (game.getGameID() == gameID && playerColor != null) {
-                switch(playerColor.toUpperCase()) {
-                    case "WHITE":
-                        if (game.getWhiteUsername() != null) {
-                            throw new DataAccessException("Player has already joined as white.");
-                        }
-                        createGame(game.changeWhiteName(username));
-                        break;
-                    case "BLACK":
-                        if (game.getBlackUsername() != null) {
-                            throw new DataAccessException("Player has already joined as white.");
-                        }
-                        createGame(game.changeBlackName(username));
-                        break;
-                }
-                deleteGame(game);
-                return;
-            } else if (game.getGameID() == gameID) {
-                // Player needs to be added to observers
-                return;
-            }
+        GameData game = getGameData(gameID);
+        if (game == null) {
+            throw new InvalidGameID("Game does not exist.");
         }
-        throw new InvalidGameID("Game does not exist.");
+
+        switch (playerColor.toUpperCase()) {
+            case "WHITE" -> {
+                if (game.getWhiteUsername() != null && !game.getWhiteUsername().isEmpty()) {
+                    throw new DataAccessException("Player has already joined as white.");
+                }
+                game = game.changeWhiteName(username);
+            }
+            case "BLACK" -> {
+                if (game.getBlackUsername() != null && !game.getBlackUsername().isEmpty()) {
+                    throw new DataAccessException("Player has already joined as black.");
+                }
+                game = game.changeBlackName(username);
+            }
+            default -> throw new InvalidGameID("Invalid player color. Choose WHITE or BLACK.");
+        }
+
+        updateGame(game);
     }
 
     @Override

@@ -13,7 +13,6 @@ public class ChessClient {
     private String loggedInUser = null;
     private AuthData authData = null;
     private ChessGame.TeamColor playerColor = null;
-    private boolean gameplayMode = false;
     private final ServerFacade server;
     private ChessGameplay gameplay;
     private final String serverUrl;
@@ -30,7 +29,7 @@ public class ChessClient {
             var cmd = (tokens.length > 0) ? tokens[0] : "help";
             var params = Arrays.copyOfRange(tokens, 1, tokens.length);
 
-            if (gameplayMode) {
+            if (getState().equals(State.GAMEPLAY) || getState().equals(State.OBSERVING)) {
                 return gameplay.eval(tokens);
             }
 
@@ -112,16 +111,13 @@ public class ChessClient {
                     }
                 }
 
-                var joinInformation = new JoinInformation(colorString, gameID);
-                server.joinGame(joinInformation, authData.authToken());
-
                 gameplay = new ChessGameplay(this, playerColor, serverUrl, authData, gameID);
                 if (playerColor != null) {
                     gameplay.joinGame();
                 } else {
                     gameplay.observeGame();
                 }
-                gameplayMode = true;
+                state = State.GAMEPLAY;
 
                 var joinedUser = (colorString != null) ? colorString : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);
@@ -136,12 +132,9 @@ public class ChessClient {
         if (params.length >= 1) {
             try {
                 var gameID = Integer.parseInt(params[0]);
-                var joinInformation = new JoinInformation(null, gameID);
-                server.joinGame(joinInformation, authData.authToken());
                 gameplay = new ChessGameplay(this, playerColor, serverUrl, authData, gameID);
-
                 gameplay.observeGame();
-                gameplayMode = true;
+                setState(State.OBSERVING);
 
                 return String.format("Observing game %d", gameID);
             } catch (NumberFormatException ignored) {
@@ -176,11 +169,11 @@ public class ChessClient {
             SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands\n";
     }
 
-    public void gameOver() {
-        gameplayMode = false;
+    public void setState(State newState) {
+        state = newState;
     }
 
-    public State isLoggedIn() {
+    public State getState() {
         return state;
     }
 

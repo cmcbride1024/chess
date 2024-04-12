@@ -31,11 +31,26 @@ public class WebSocketHandler {
         UserGameCommand userCommand = new Gson().fromJson(message, UserGameCommand.class);
         var commandType = userCommand.getCommandType();
         switch (commandType) {
-            case JOIN_PLAYER -> handleJoinPlayer(session, (JoinPlayer) userCommand);
-            case JOIN_OBSERVER -> handleJoinObserver(session, (JoinObserver) userCommand);
-            case MAKE_MOVE -> handleMakeMove((MakeMove) userCommand);
-            case LEAVE -> handleLeave((Leave) userCommand);
-            case RESIGN -> handleResign((Resign) userCommand);
+            case JOIN_PLAYER ->  {
+                JoinPlayer joinPlayer = new Gson().fromJson(message, JoinPlayer.class);
+                handleJoinPlayer(session, joinPlayer);
+            }
+            case JOIN_OBSERVER -> {
+                JoinObserver joinObserver = new Gson().fromJson(message, JoinObserver.class);
+                handleJoinObserver(session, joinObserver);
+            }
+            case MAKE_MOVE -> {
+                MakeMove makeMove = new Gson().fromJson(message, MakeMove.class);
+                handleMakeMove(makeMove);
+            }
+            case LEAVE -> {
+                Leave leave = new Gson().fromJson(message, Leave.class);
+                handleLeave(leave);
+            }
+            case RESIGN -> {
+                Resign resign = new Gson().fromJson(message, Resign.class);
+                handleResign(resign);
+            }
         }
     }
 
@@ -50,6 +65,7 @@ public class WebSocketHandler {
         for (var listGame : games) {
             if (listGame.getGameID() == player.getGameID()) {
                 game = listGame.getGame();
+                break;
             }
         }
 
