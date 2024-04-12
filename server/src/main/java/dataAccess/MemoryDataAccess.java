@@ -7,7 +7,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.*;
 
-
 public class MemoryDataAccess implements DataAccess {
     private int userID;
     private int gameID;
@@ -77,6 +76,11 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     @Override
+    public void updateGame(GameData gameData) {
+
+    }
+
+    @Override
     public AuthData getAuth(String authToken) {
         for (Map.Entry<UserData, List<AuthData>> entry : authTokens.entrySet()) {
             List<AuthData> authList = entry.getValue();
@@ -121,22 +125,27 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     @Override
+    public GameData getGameData(int gameID) {
+        return null;
+    }
+
+    @Override
     public void joinGame(String username, String playerColor, int gameID) throws InvalidGameID, DataAccessException {
         if (!gameIDs.containsValue(gameID)) {
             throw new InvalidGameID("Game does not exist.");
         }
 
         for (GameData game : games) {
-            if (game.gameID() == gameID && playerColor != null) {
+            if (game.getGameID() == gameID && playerColor != null) {
                 switch (playerColor) {
                     case "WHITE":
-                        if (game.whiteUsername() != null) {
+                        if (game.getWhiteUsername() != null) {
                             throw new DataAccessException("Player has already joined as white.");
                         }
                         games.add(game.changeWhiteName(username));
                         break;
                     case "BLACK":
-                        if (game.blackUsername() != null) {
+                        if (game.getBlackUsername() != null) {
                             throw new DataAccessException("Player has already joined as white.");
                         }
                         games.add(game.changeBlackName(username));

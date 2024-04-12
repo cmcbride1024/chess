@@ -126,11 +126,11 @@ public class ChessGameplay implements NotificationHandler {
     }
 
     public void joinGame() throws ResponseException {
-        ws.joinGame(gameID, playerColor, authData.authToken());
+        ws.joinGame(gameID, playerColor, authData);
     }
 
     public void observeGame() throws ResponseException {
-        ws.observeGame(gameID, authData.authToken());
+        ws.observeGame(gameID, authData);
     }
 
     public String redrawBoard() {
@@ -140,7 +140,7 @@ public class ChessGameplay implements NotificationHandler {
     public String leaveGame(String... params) throws ResponseException {
         if (params.length >= 1) {
             int gameID = Integer.parseInt(params[0]);
-            ws.leaveGame(gameID, authData.authToken());
+            ws.leaveGame(gameID, authData);
             client.gameOver();
 
             return String.format("%s has left game %d", authData.username(), gameID);
@@ -176,7 +176,7 @@ public class ChessGameplay implements NotificationHandler {
                 var startPosition = generatePosition(startPos);
                 var endPosition = generatePosition(endPos);
                 var newMove = new ChessMove(startPosition, endPosition, promotionPiece);
-                ws.makeMove(gameID, newMove, authData.authToken());
+                ws.makeMove(gameID, newMove, authData);
 
                 String movingPiece = gameState.getBoard().getPiece(startPosition).toString();
                 return String.format("Moved %s %s to %s", startPos, movingPiece, endPos);
@@ -186,7 +186,7 @@ public class ChessGameplay implements NotificationHandler {
     }
 
     public String resignGame() throws ResponseException {
-        ws.resign(gameID, authData.authToken());
+        ws.resign(gameID, authData);
 
         return String.format("%s has resigned game %d", authData.username(), gameID);
     }

@@ -16,6 +16,7 @@ public class ChessGame {
     private boolean whiteQueenRookMoved = false, whiteKingRookMoved = false, blackQueenRookMoved = false, blackKingRookMoved = false;
     private boolean canEnPassant = false;
     private ChessPosition enPassantPosition = null;
+    private boolean gameIsOver = false;
 
     public ChessGame() {
     }
@@ -413,13 +414,10 @@ public class ChessGame {
     private boolean isValidMove(ChessMove move, TeamColor teamColor) {
         ChessBoard testBoard = getBoard().deepCopy();
         ChessPiece pieceToMove = getBoard().getPiece(move.getStartPosition());
-
         boolean pieceHasMove = pieceToMove.pieceMoves(getBoard(), move.getStartPosition()).contains(move);
-
         if (!pieceHasMove) {
             return false;
         }
-
         if (move.getPromotionPiece() != null) {
             testBoard.addPiece(move.getStartPosition(), null);
             testBoard.addPiece(move.getEndPosition(), new ChessPiece(teamColor, move.getPromotionPiece()));
@@ -427,7 +425,6 @@ public class ChessGame {
             testBoard.addPiece(move.getStartPosition(), null);
             testBoard.addPiece(move.getEndPosition(), pieceToMove);
         }
-
         return !moveIsInCheck(pieceToMove.getTeamColor(), testBoard);
     }
 
@@ -442,7 +439,6 @@ public class ChessGame {
                 return false;
             }
         }
-
         return true;
     }
 
@@ -457,7 +453,6 @@ public class ChessGame {
         if (!isInCheck(teamColor)) {
             return false;
         }
-
         return teamHasNoValidMove(teamColor);
     }
 
@@ -492,5 +487,13 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return gameBoard;
+    }
+
+    public void gameIsOver() {
+        gameIsOver = true;
+    }
+
+    public boolean getGameIsOver() {
+        return gameIsOver;
     }
 }

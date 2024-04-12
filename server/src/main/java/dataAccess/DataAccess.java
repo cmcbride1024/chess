@@ -29,7 +29,11 @@ public interface DataAccess {
 
     HashMap<Integer, UserData> getUsers() throws DataAccessException, ResponseException;
 
+    void updateGame(GameData gameData) throws ResponseException, DataAccessException;
+
     void deleteAuth(AuthData auth) throws DataAccessException, ResponseException, SQLException;
+
+    GameData getGameData(int gameID) throws DataAccessException, SQLException, ResponseException;
 
     void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID, ResponseException, SQLException;
 

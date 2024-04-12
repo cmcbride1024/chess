@@ -67,9 +67,10 @@ public class MySqlDataAccess implements DataAccess {
 
     @Override
     public void createGame(GameData gameData) throws DataAccessException, ResponseException, SQLException {
-        String statement = "INSERT INTO games (gameData) VALUES (?)";
+        String statement = "INSERT INTO games (gameID, gameData) VALUES (?, ?)";
+        int gameID = gameData.getGameID();
         var jsonGame = new Gson().toJson(gameData);
-        executeUpdate(statement, jsonGame);
+        executeUpdate(statement, gameID, jsonGame);
     }
 
     @Override
@@ -191,10 +192,10 @@ public class MySqlDataAccess implements DataAccess {
 
     private void deleteGame(GameData gameData) throws DataAccessException, ResponseException {
         try (var conn = DatabaseManager.getConnection()) {
-            String statement = "DELETE FROM games WHERE gameData=?";
+            String statement = "DELETE FROM games WHERE gameID=?";
+            int gameID = gameData.getGameID();
             try (var ps = conn.prepareStatement(statement)) {
-                String gameJson = new Gson().toJson(gameData);
-                ps.setString(1, gameJson);
+                ps.setInt(1, gameID);
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
@@ -203,18 +204,46 @@ public class MySqlDataAccess implements DataAccess {
     }
 
     @Override
+    public void updateGame(GameData gameData) throws DataAccessException, ResponseException {
+        String statement = "UPDATE games SET gameData = ? WHERE gameID = ?";
+        int gameID = gameData.getGameID();
+        var jsonGame = new Gson().toJson(gameData);
+        executeUpdate(statement, jsonGame, gameID);
+    }
+
+    @Override
+    public GameData getGameData(int gameID) throws DataAccessException, ResponseException {
+        try (var conn = DatabaseManager.getConnection()) {
+            String statement = "SELECT gameData FROM games WHERE gameID = ?";
+            try (var ps = conn.prepareStatement(statement)) {
+                ps.setInt(1, gameID);
+                try (var rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        String gameJson = rs.getString("gameData");
+                        return new Gson().fromJson(gameJson, GameData.class);
+                    } else {
+                        return null;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, "Unable to get game data: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void joinGame(String username, String playerColor, int gameID) throws DataAccessException, InvalidGameID, ResponseException, SQLException {
         for (GameData game : getGames()) {
-            if (game.gameID() == gameID && playerColor != null) {
+            if (game.getGameID() == gameID && playerColor != null) {
                 switch(playerColor.toUpperCase()) {
                     case "WHITE":
-                        if (game.whiteUsername() != null) {
+                        if (game.getWhiteUsername() != null) {
                             throw new DataAccessException("Player has already joined as white.");
                         }
                         createGame(game.changeWhiteName(username));
                         break;
                     case "BLACK":
-                        if (game.blackUsername() != null) {
+                        if (game.getBlackUsername() != null) {
                             throw new DataAccessException("Player has already joined as white.");
                         }
                         createGame(game.changeBlackName(username));
@@ -222,7 +251,7 @@ public class MySqlDataAccess implements DataAccess {
                 }
                 deleteGame(game);
                 return;
-            } else if (game.gameID() == gameID) {
+            } else if (game.getGameID() == gameID) {
                 // Player needs to be added to observers
                 return;
             }
@@ -308,7 +337,9 @@ public class MySqlDataAccess implements DataAccess {
             """,
             """
             CREATE TABLE IF NOT EXISTS games (
-                `gameData` TEXT DEFAULT NULL
+                `gameID` int NOT NULL,
+                `gameData` TEXT DEFAULT NULL,
+                PRIMARY KEY (`gameID`)
             )
             """
     };

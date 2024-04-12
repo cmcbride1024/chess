@@ -1,5 +1,6 @@
 package service;
 
+import chess.ChessBoard;
 import chess.ChessGame;
 import dataAccess.*;
 import exception.ResponseException;
@@ -66,6 +67,9 @@ public class UserService {
 
         int newGameID = dataAccess.createGameID(gameName);
         ChessGame game = new ChessGame();
+        ChessBoard newBoard = new ChessBoard();
+        newBoard.resetBoard();
+        game.setBoard(newBoard);
         dataAccess.createGame(new GameData(newGameID, null, null, gameName, game));
 
         return newGameID;
@@ -79,6 +83,44 @@ public class UserService {
 
         var username = dataAccess.getAuth(authToken).username();
         dataAccess.joinGame(username, playerColor, gameID);
+    }
+
+    public GameData getGameData(String authToken, Integer gameID) throws ResponseException, DataAccessException, UnauthorizedException, SQLException {
+        AuthData authData = dataAccess.getAuth(authToken);
+        if (authData == null) {
+            throw new UnauthorizedException("User is not registered with the system.");
+        }
+
+        return dataAccess.getGameData(gameID);
+    }
+
+    public void updateGame(String authToken, ChessGame newGame, int gameID) throws ResponseException, DataAccessException, UnauthorizedException, SQLException {
+        AuthData authData = dataAccess.getAuth(authToken);
+        if (authData == null) {
+            throw new UnauthorizedException("User is not registered with the system.");
+        }
+
+        GameData existingGame = dataAccess.getGameData(gameID);
+        if (existingGame == null) {
+            throw new DataAccessException("No game found with the provided game ID.");
+        }
+
+        if (!existingGame.getWhiteUsername().equals(authData.username()) && !existingGame.getBlackUsername().equals(authData.username())) {
+            throw new UnauthorizedException("User is not authorized to update this game.");
+        }
+
+        existingGame.setGame(newGame);
+
+        dataAccess.updateGame(existingGame);
+    }
+
+    public void updateGameData(String authToken, GameData newGameData) throws UnauthorizedException, ResponseException, DataAccessException {
+        AuthData authData = dataAccess.getAuth(authToken);
+        if (authData == null) {
+            throw new UnauthorizedException("User is not registered with the system.");
+        }
+
+        dataAccess.updateGame(newGameData);
     }
 
     public void clearApplication() throws DataAccessException, ResponseException, SQLException {
