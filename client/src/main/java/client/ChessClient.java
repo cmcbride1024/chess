@@ -1,7 +1,6 @@
 package client;
 
 import chess.ChessGame;
-import com.google.gson.Gson;
 import exception.ResponseException;
 import server.ServerFacade;
 import model.*;
@@ -91,9 +90,13 @@ public class ChessClient {
         assertSignedIn();
         var games = server.listGames(authData.authToken());
         var result = new StringBuilder();
-        var gson = new Gson();
         for (var game : games.games()) {
-            result.append(gson.toJson(game)).append('\n');
+            result.append(String.format("Game %s:", game.gameName())).append('\n');
+            result.append(String.format("   ID: %d", game.gameID())).append('\n');
+            String whiteUsername = (game.whiteUsername() != null) ? game.whiteUsername() : "[NONE]";
+            String blackUsername = (game.blackUsername() != null) ? game.blackUsername() : "[NONE]";
+            result.append(String.format("   White Username: %s", whiteUsername)).append('\n');
+            result.append(String.format("   Black Username: %s", blackUsername)).append('\n');
         }
         return result.toString();
     }

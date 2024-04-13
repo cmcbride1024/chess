@@ -145,13 +145,13 @@ public class WebSocketHandler {
 
         GameData gameData = service.getGameData(leave.getAuthString(), leave.getGameID());
         if (gameData.getWhiteUsername().equals(username)) {
-            gameData.changeWhiteName(null);
+            gameData = gameData.changeWhiteName(null);
             service.updateGameData(leave.getAuthString(), gameData);
         } else if (gameData.getBlackUsername().equals(username)) {
-            gameData.changeBlackName(null);
+            gameData = gameData.changeBlackName(null);
             service.updateGameData(leave.getAuthString(), gameData);
         } else {
-            message += "as an observer";
+            message += " as an observer";
         }
 
         var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);

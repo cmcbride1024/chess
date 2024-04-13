@@ -3,6 +3,7 @@ package client;
 import chess.*;
 import client.webSocket.NotificationHandler;
 import client.webSocket.WebSocketFacade;
+import com.google.gson.Gson;
 import exception.ResponseException;
 import model.AuthData;
 import webSocketMessages.serverMessages.LoadGame;
@@ -50,39 +51,48 @@ public class ChessGameplay implements NotificationHandler {
     private String getLabel(int row, int col) {
         String[] columnLabels = {" ", "a", "b", "c", "d", "e", "f", "g", "h", " "};
         String[] rowLabels = {" ", "8", "7", "6", "5", "4", "3", "2", "1", " "};
-        String piece;
         if (row == 0 || row == 9) {
-            piece = columnLabels[col];
+            return columnLabels[col];
         } else if (col == 0 || col == 9) {
-            piece = rowLabels[row];
-        } else {
-            ChessBoard board = gameState.getBoard();
-            var tempPiece = board.getPiece(new ChessPosition(row, col));
-            if (tempPiece != null) {
-                piece = switch (tempPiece.getPieceType()) {
-                    case ROOK -> "R";
-                    case KING -> "K";
-                    case QUEEN -> "Q";
-                    case BISHOP -> "B";
-                    case KNIGHT -> "N";
-                    case PAWN -> "P";
-                };
-            } else {
-                piece = " ";
-            }
+            return rowLabels[row];
         }
-        return piece;
+
+        ChessBoard board = getGameState().getBoard();
+        ChessPiece tempPiece = board.getPiece(new ChessPosition(row, col));
+        if (tempPiece == null) {
+            return " ";
+        }
+
+        return switch (tempPiece.getPieceType()) {
+            case ROOK -> "R";
+            case KING -> "K";
+            case QUEEN -> "Q";
+            case BISHOP -> "B";
+            case KNIGHT -> "N";
+            case PAWN -> "P";
+        };
     }
+
 
     private String chessCharacterLookup(int row, int col) {
         String piece = getLabel(row, col);
-        var teamColor = gameState.getBoard().getPiece(new ChessPosition(row, col)).getTeamColor();
-
-        if (teamColor.equals(ChessGame.TeamColor.WHITE)) {
-            return piece.equals(" ") ? piece : SET_TEXT_COLOR_WHITE + piece + RESET_TEXT_COLOR;
+        if (row == 0 || col == 0 || row == 9 || col == 9) {
+            return piece;  // Early return for borders, which do not have pieces
         }
-        return piece.equals(" ") ? piece : SET_TEXT_COLOR_BLACK + piece + RESET_TEXT_COLOR;
+
+        ChessPosition newPosition = new ChessPosition(row, col);
+        ChessPiece pieceAtPosition = getGameState().getBoard().getPiece(newPosition);
+        if (pieceAtPosition == null) {
+            return piece;  // Return the piece character, which should be " " for empty squares
+        }
+
+        if (pieceAtPosition.getTeamColor().equals(ChessGame.TeamColor.WHITE)) {
+            return SET_TEXT_COLOR_WHITE + piece + RESET_TEXT_COLOR;
+        } else {
+            return SET_TEXT_COLOR_BLACK + piece + RESET_TEXT_COLOR;
+        }
     }
+
 
     public String boardLayout(ChessGame.TeamColor playerColor, boolean highlight, ChessPosition position) {
         var board = new StringBuilder();
@@ -98,7 +108,7 @@ public class ChessGameplay implements NotificationHandler {
                     String bgColor;
 
                     if (highlight) {
-                        var validMoves = gameState.validMoves(position);
+                        var validMoves = getGameState().validMoves(position);
                         boolean containsSquare = false;
                         for (var move : validMoves) {
                             if (move.getEndPosition().equals(new ChessPosition(row, col))) {
@@ -151,11 +161,11 @@ public class ChessGameplay implements NotificationHandler {
 
     private ChessPosition generatePosition(String position) throws ResponseException {
         try {
-            int row = position.charAt(1);
-            int col = Character.toLowerCase(position.charAt(0)) - 'a' + 1;
-            if (row < 1 || row > 8 || col < 1 || col > 8) {
-                throw new ResponseException(400, "Move is out of board range.");
-            }
+            char columnChar = Character.toLowerCase(position.charAt(0));
+            char rowChar = position.charAt(1);
+            int col = columnChar - 'a' + 1;
+            int row = rowChar - '1' + 1;
+
             return new ChessPosition(row, col);
         } catch (Exception ex) {
             throw new ResponseException(400, ex.getMessage());
@@ -188,6 +198,7 @@ public class ChessGameplay implements NotificationHandler {
 
     public String resignGame() throws ResponseException {
         ws.resign(gameID, authData);
+        client.setState(State.SIGNEDIN);
 
         return String.format("%s has resigned game %d", authData.username(), gameID);
     }
@@ -201,6 +212,14 @@ public class ChessGameplay implements NotificationHandler {
         throw new ResponseException(400, "Expected: <POSITION>");
     }
 
+    private void setGameState(ChessGame newGame) {
+        gameState = newGame;
+    }
+
+    private ChessGame getGameState() {
+        return gameState;
+    }
+
     public String help() {
         return SET_TEXT_COLOR_BLUE + "redraw" + SET_TEXT_COLOR_WHITE + " - to display current board state\n" +
                 SET_TEXT_COLOR_BLUE + "leave <GAME_ID>" + SET_TEXT_COLOR_WHITE + " - to leave the game\n" +
@@ -211,20 +230,22 @@ public class ChessGameplay implements NotificationHandler {
     }
 
     @Override
-    public void notify(ServerMessage serverMessage) {
+    public void notify(String message) {
+        ServerMessage serverMessage = new Gson().fromJson(message, ServerMessage.class);
         ServerMessage.ServerMessageType messageType = serverMessage.getServerMessageType();
         switch (messageType) {
             case LOAD_GAME -> {
-                LoadGame loadGame = (LoadGame) serverMessage;
-                gameState = loadGame.getGame();
+                LoadGame loadGame = new Gson().fromJson(message, LoadGame.class);
+                setGameState(loadGame.getGame());
+                System.out.println();
                 System.out.println(boardLayout(playerColor, false, null));
             }
             case ERROR -> {
-                Error error = (Error) serverMessage;
+                Error error = new Gson().fromJson(message, Error.class);
                 System.out.println(SET_TEXT_COLOR_GREEN + error.getErrorMessage());
             }
             case NOTIFICATION -> {
-                Notification notification = (Notification) serverMessage;
+                Notification notification = new Gson().fromJson(message, Notification.class);
                 System.out.println(SET_TEXT_COLOR_GREEN + notification.getMessage());
             }
         }
