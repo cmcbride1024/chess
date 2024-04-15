@@ -106,65 +106,110 @@ public class WebSocketHandler {
 
         var message = String.format("%s has joined the game as %s", username, player.getPlayerColor().toString());
         var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
-        connectionManager.broadcast(player.getAuthString(), notification);
+        connectionManager.broadcast(authString, notification);
 
         var loadGame = new LoadGame(ServerMessage.ServerMessageType.LOAD_GAME, game);
-        connectionManager.sendMessage(player.getAuthString(), loadGame);
+        connectionManager.sendMessage(authString, loadGame);
     }
 
-    private void handleJoinObserver(Session session, JoinObserver observer) throws IOException, ResponseException, UnauthorizedException, DataAccessException {
+    private void handleJoinObserver(Session session, JoinObserver observer) throws IOException, ResponseException, DataAccessException {
         var username = observer.getUsername();
+        var authString = observer.getAuthString();
         String gameID = Integer.toString(observer.getGameID());
         ConnectionManager connectionManager = gameConnectionManagers.computeIfAbsent(gameID, k -> new ConnectionManager());
-        connectionManager.add(username, session);
+        connectionManager.add(observer.getAuthString(), session);
 
-        var message = String.format("%s is now observing game %s", username, gameID);
-        var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
-        connectionManager.broadcast(username, notification);
+        Collection<GameData> games;
+        try {
+            games = service.listGames(observer.getAuthString());
+        } catch (UnauthorizedException ex) {
+            var message = "Unauthorized user";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
+        }
 
         ChessGame game = null;
-        var games = service.listGames(observer.getAuthString());
         for (var listGame : games) {
             if (listGame.getGameID() == observer.getGameID()) {
                 game = listGame.getGame();
+                break;
             }
         }
 
+        if (game == null) {
+            var message = "Game does not exist";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
+        }
+
+        var message = String.format("%s is now observing game %s", username, gameID);
+        var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
+        connectionManager.broadcast(authString, notification);
+
         var loadGame = new LoadGame(ServerMessage.ServerMessageType.LOAD_GAME, game);
-        connectionManager.sendMessage(username, loadGame);
+        connectionManager.sendMessage(authString, loadGame);
     }
 
     private void handleMakeMove(MakeMove makeMove) throws IOException, ResponseException, UnauthorizedException, DataAccessException, InvalidMoveException, SQLException {
         var username = makeMove.getUsername();
+        var authString = makeMove.getAuthString();
         String gameID = Integer.toString(makeMove.getGameID());
         ConnectionManager connectionManager = gameConnectionManagers.get(gameID);
-
+        ChessGame.TeamColor playerColor = null;
         ChessGame chessGame = null;
         var games = service.listGames(makeMove.getAuthString());
+
+        var authDataName = service.getAuthData(authString).username();
         for (var listGame : games) {
             if (listGame.getGameID() == makeMove.getGameID()) {
                 chessGame = listGame.getGame();
+            }
+            if (listGame.getWhiteUsername().equals(authDataName)) {
+                playerColor = ChessGame.TeamColor.WHITE;
+            } else if (listGame.getBlackUsername().equals(authDataName)) {
+                playerColor = ChessGame.TeamColor.BLACK;
             }
         }
 
         assert chessGame != null;
         if (chessGame.getGameIsOver()) {
-            throw new ResponseException(500, "Game is over");
+            var message = "Unauthorized user";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
         }
 
         var move = makeMove.getMove();
         var validMoves = chessGame.validMoves(move.getStartPosition());
         if (!validMoves.contains(move)) {
-            var error = new Error(ServerMessage.ServerMessageType.ERROR, "Illegal move");
-            connectionManager.sendMessage(username, error);
+            var message = "Invalid move";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
+        }
+
+        if (chessGame.getTeamTurn() != playerColor) {
+            var message = "It is the other player's turn";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
+        }
+
+        if (chessGame.getGameIsOver()) {
+            var message = "The game is over";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
         }
 
         chessGame.makeMove(move);
-        service.updateGame(makeMove.getAuthString(), chessGame, makeMove.getGameID());
+        service.updateGame(authString, chessGame, makeMove.getGameID());
 
         var message = String.format("%s moved from %s to %s", username, move.getStartPosition().toString(), move.getEndPosition().toString());
         var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
-        connectionManager.broadcast(username, notification);
+        connectionManager.broadcast(authString, notification);
 
         var loadGame = new LoadGame(ServerMessage.ServerMessageType.LOAD_GAME, chessGame);
         connectionManager.broadcast("", loadGame);

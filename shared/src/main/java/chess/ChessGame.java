@@ -339,6 +339,10 @@ public class ChessGame {
             enPassantPosition = null;
         }
 
+        if (isInCheckmate(TeamColor.WHITE) || isInCheckmate(TeamColor.BLACK) || isInStalemate(TeamColor.WHITE) || isInStalemate(TeamColor.BLACK)) {
+            gameIsOver = true;
+        }
+
         setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE);
     }
 
@@ -376,11 +380,9 @@ public class ChessGame {
 
                 if (newPiece != null && newPiece.getTeamColor().equals(teamColor)) {
 
-                    // If opponent's piece is at this location, add all that pieces legal moves
                     ChessPiece piece = getBoard().getPiece(newPosition);
                     pieces.addAll(piece.pieceMoves(getBoard(), newPosition));
                 }
-
             }
         }
 
@@ -449,7 +451,6 @@ public class ChessGame {
      * @return True if the specified team is in checkmate, otherwise false
      */
     public boolean isInCheckmate(TeamColor teamColor) {
-        // King is in check
         if (!isInCheck(teamColor)) {
             return false;
         }
@@ -463,7 +464,6 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
-        // King is not in check
         if (isInCheck(teamColor)) {
             return false;
         }
