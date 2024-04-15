@@ -48,22 +48,26 @@ public class ChessGameplay implements NotificationHandler {
         };
     }
 
-    private String getLabel(int row, int col) {
+    private String getLabel(int row, int col, boolean colored) {
         String[] columnLabels = {" ", "a", "b", "c", "d", "e", "f", "g", "h", " "};
-        String[] rowLabels = {" ", "8", "7", "6", "5", "4", "3", "2", "1", " "};
+        String[] rowLabels = {" ", "1", "2", "3", "4", "5", "6", "7", "8", " "};
+
+        // Board labels
         if (row == 0 || row == 9) {
             return SET_TEXT_COLOR_WHITE + columnLabels[col] + RESET_TEXT_COLOR;
         } else if (col == 0 || col == 9) {
             return SET_TEXT_COLOR_WHITE + rowLabels[row] + RESET_TEXT_COLOR;
         }
 
+        // Get piece at board position
         ChessBoard board = getGameState().getBoard();
         ChessPiece tempPiece = board.getPiece(new ChessPosition(row, col));
         if (tempPiece == null) {
             return " ";
         }
 
-        return switch (tempPiece.getPieceType()) {
+        // Return the symbol and color for the found piece
+        String pieceSymbol = switch (tempPiece.getPieceType()) {
             case ROOK -> "R";
             case KING -> "K";
             case QUEEN -> "Q";
@@ -71,62 +75,50 @@ public class ChessGameplay implements NotificationHandler {
             case KNIGHT -> "N";
             case PAWN -> "P";
         };
+        if (colored) {
+            return (tempPiece.getTeamColor() == ChessGame.TeamColor.WHITE) ? SET_TEXT_COLOR_WHITE + pieceSymbol + RESET_TEXT_COLOR
+                    : SET_TEXT_COLOR_BLACK + pieceSymbol + RESET_TEXT_COLOR;
+        }
+        return pieceSymbol;
     }
-
-
-    private String chessCharacterLookup(int row, int col) {
-        String piece = getLabel(row, col);
-        if (row == 0 || col == 0 || row == 9 || col == 9) {
-            return piece;
-        }
-
-        ChessPosition newPosition = new ChessPosition(9 - row, col);
-        ChessPiece pieceAtPosition = getGameState().getBoard().getPiece(newPosition);
-        if (pieceAtPosition == null) {
-            return piece;
-        }
-
-        if (pieceAtPosition.getTeamColor().equals(ChessGame.TeamColor.WHITE)) {
-            return SET_TEXT_COLOR_WHITE + piece + RESET_TEXT_COLOR;
-        } else {
-            return SET_TEXT_COLOR_BLACK + piece + RESET_TEXT_COLOR;
-        }
-    }
-
 
     public String boardLayout(ChessGame.TeamColor playerColor, boolean highlight, ChessPosition position) {
-        var board = new StringBuilder();
+        StringBuilder board = new StringBuilder();
         for (int row = 0; row <= 9; row++) {
             for (int col = 0; col <= 9; col++) {
-                int newRow = (Objects.equals(playerColor, ChessGame.TeamColor.WHITE)) ? row : 9 - row;
-                int newCol = (Objects.equals(playerColor, ChessGame.TeamColor.WHITE)) ? col : 9 - col;
-                String chessCharacter = chessCharacterLookup(newRow, newCol);
+                int displayRow = (Objects.equals(playerColor, ChessGame.TeamColor.BLACK)) ? row : 9 - row;
+                int displayCol = (Objects.equals(playerColor, ChessGame.TeamColor.BLACK)) ? 9 - col : col;
+
+                String chessCharacter = getLabel(displayRow, displayCol, true);
+                boolean isDark = (displayRow + displayCol) % 2 == 0;
+                String bgColor = isDark ? SET_BG_COLOR + "95m" : SET_BG_COLOR + "222m";
 
                 if (row == 0 || col == 0 || row == 9 || col == 9) {
                     board.append(SET_BG_COLOR_LIGHT_GREY);
+
                 } else {
-                    boolean isDark = (row + col) % 2 == 1;
-                    String bgColor;
+                    boolean containsSquare = false;
 
                     if (highlight) {
                         var validMoves = getGameState().validMoves(position);
-                        boolean containsSquare = false;
                         for (var move : validMoves) {
-                            if (move.getEndPosition().equals(new ChessPosition(row, col))) {
+                            var validMovePos = new ChessPosition(displayRow, displayCol);
+                            if (move.getEndPosition().equals(validMovePos)) {
                                 containsSquare = true;
+                                var tempPiece = gameState.getBoard().getPiece(validMovePos);
+                                if (tempPiece != null && tempPiece.getTeamColor() == ChessGame.TeamColor.WHITE) {
+                                    chessCharacter = SET_TEXT_COLOR_BLACK + getLabel(displayRow, displayCol, false) + RESET_TEXT_COLOR;
+                                }
                                 break;
                             }
                         }
-
-                        if (containsSquare) {
-                            bgColor = isDark ? SET_BG_COLOR + "102m" : SET_BG_COLOR + "42m";
-                        } else {
-                            bgColor = isDark ? SET_BG_COLOR + "95m" : SET_BG_COLOR + "222m";
+                        if (position.equals(new ChessPosition(displayRow, displayCol))) {
+                            bgColor = SET_BG_COLOR_YELLOW;
+                        } else if (containsSquare) {
+                            bgColor = isDark ? SET_BG_COLOR_DARK_GREEN : SET_BG_COLOR_GREEN;
                         }
-                    } else {
-                        bgColor = isDark ? SET_BG_COLOR + "95m" : SET_BG_COLOR + "222m";
-                    }
 
+                    }
                     board.append(bgColor);
                 }
                 board.append(String.format(" %s ", chessCharacter)).append("\u001B[49m");
@@ -166,12 +158,6 @@ public class ChessGameplay implements NotificationHandler {
             int col = columnChar - 'a' + 1;
             int row = rowChar - '1' + 1;
 
-            if (playerColor.equals(ChessGame.TeamColor.BLACK)) {
-                col = 9 - col;
-            } else {
-                row = 9 - row;
-            }
-
             return new ChessPosition(row, col);
         } catch (Exception ex) {
             throw new ResponseException(400, ex.getMessage());
@@ -179,6 +165,12 @@ public class ChessGameplay implements NotificationHandler {
     }
 
     public String makeMove(String... params) throws ResponseException {
+        if (client.getState().equals(State.OBSERVING)) {
+            throw new ResponseException(400, "You cannot make moves as an observer");
+        } else if (gameState.getGameIsOver()) {
+            throw new ResponseException(400, "Game is already over");
+        }
+
         if (params.length >= 1) {
             String move = params[0];
             if (move.length() >= 4) {
@@ -204,15 +196,19 @@ public class ChessGameplay implements NotificationHandler {
 
     public String resignGame() throws ResponseException {
         ws.resign(gameID, authData);
-        client.setState(State.SIGNEDIN);
 
-        return String.format("%s has resigned game %d", authData.username(), gameID);
+        return "";
     }
 
     public String legalMoves(String... params) throws ResponseException {
         if (params.length >= 1) {
             var givenPosition = params[0];
             var startingPosition = generatePosition(givenPosition);
+
+            var tempPiece = gameState.getBoard().getPiece(startingPosition);
+            if (tempPiece != null && !tempPiece.getTeamColor().equals(gameState.getTeamTurn())) {
+                throw new ResponseException(400, String.format("It is %s's turn", gameState.getTeamTurn()));
+            }
             return boardLayout(playerColor, true, startingPosition);
         }
         throw new ResponseException(400, "Expected: <POSITION>");
@@ -240,6 +236,7 @@ public class ChessGameplay implements NotificationHandler {
         var startLine = switch(loggedIn) {
             case State.GAMEPLAY -> "[PLAYING]";
             case State.OBSERVING -> "[OBSERVING]";
+            case State.SIGNEDIN -> "[LOGGED_IN]";
             default -> "";
         };
         System.out.print("\n" + ERASE_SCREEN + startLine + " >>> ");
