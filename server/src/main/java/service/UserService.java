@@ -109,7 +109,8 @@ public class UserService {
             throw new DataAccessException("No game found with the provided game ID.");
         }
 
-        if (!existingGame.getWhiteUsername().equals(authData.username()) && !existingGame.getBlackUsername().equals(authData.username())) {
+        if (authData.username() != null && (!existingGame.getWhiteUsername().equals(authData.username()) &&
+                !existingGame.getBlackUsername().equals(authData.username()))) {
             throw new UnauthorizedException("User is not authorized to update this game.");
         }
 

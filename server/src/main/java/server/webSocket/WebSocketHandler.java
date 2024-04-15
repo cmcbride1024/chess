@@ -240,6 +240,7 @@ public class WebSocketHandler {
 
     private void handleResign(Resign resign) throws IOException, ResponseException, UnauthorizedException, DataAccessException, SQLException {
         var username = resign.getUsername();
+        var authString = resign.getAuthString();
         String gameID = Integer.toString(resign.getGameID());
         ConnectionManager connectionManager = gameConnectionManagers.get(gameID);
 
@@ -248,6 +249,13 @@ public class WebSocketHandler {
         for (var listGame : games) {
             if (listGame.getGameID() == resign.getGameID()) {
                 chessGame = listGame.getGame();
+
+                if (!Objects.equals(listGame.getWhiteUsername(), username) && !Objects.equals(listGame.getBlackUsername(), username)) {
+                    var message = "The game is over";
+                    var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+                    connectionManager.sendMessage(authString, error);
+                    return;
+                }
             }
         }
 

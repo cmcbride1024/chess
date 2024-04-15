@@ -261,7 +261,7 @@ public class ChessGameplay implements NotificationHandler {
             case ERROR -> {
                 Error error = new Gson().fromJson(message, Error.class);
                 System.out.println();
-                System.out.println(SET_TEXT_COLOR_GREEN + error.getErrorMessage() + SET_TEXT_COLOR_WHITE);
+                System.out.println(SET_TEXT_COLOR_RED + error.getErrorMessage() + SET_TEXT_COLOR_WHITE);
                 printPrompt();
             }
             case NOTIFICATION -> {
