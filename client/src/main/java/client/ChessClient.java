@@ -90,6 +90,12 @@ public class ChessClient {
         assertSignedIn();
         var games = server.listGames(authData.authToken());
         var result = new StringBuilder();
+
+        if (games.games().isEmpty()) {
+            result.append("No current games").append('\n');
+            return result.toString();
+        }
+
         for (var game : games.games()) {
             result.append(String.format("Game %s:", game.gameName())).append('\n');
             result.append(String.format("   ID: %d", game.gameID())).append('\n');
@@ -113,14 +119,17 @@ public class ChessClient {
                         playerColor = (colorString.equalsIgnoreCase("white")) ? ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
                     }
                 }
+                JoinInformation joinInformation = new JoinInformation(playerColor.toString(), gameID);
+                server.joinGame(joinInformation, authData.authToken());
 
                 gameplay = new ChessGameplay(this, playerColor, serverUrl, authData, gameID);
                 if (playerColor != null) {
                     gameplay.joinGame();
+                    setState(State.GAMEPLAY);
                 } else {
                     gameplay.observeGame();
+                    setState(State.OBSERVING);
                 }
-                state = State.GAMEPLAY;
 
                 var joinedUser = (colorString != null) ? colorString : "observer";
                 return String.format("Joined game %d as %s", gameID, joinedUser);

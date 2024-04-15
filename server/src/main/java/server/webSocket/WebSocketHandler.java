@@ -4,7 +4,6 @@ import chess.ChessGame;
 import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataAccess.DataAccessException;
-import dataAccess.InvalidGameID;
 import dataAccess.MySqlDataAccess;
 import dataAccess.UnauthorizedException;
 import exception.ResponseException;
@@ -19,6 +18,8 @@ import webSocketMessages.userCommands.*;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @WebSocket
@@ -27,7 +28,7 @@ public class WebSocketHandler {
     private final UserService service = new UserService(new MySqlDataAccess());
 
     @OnWebSocketMessage
-    public void onMessage(Session session, String message) throws IOException, InvalidMoveException, ResponseException, SQLException, UnauthorizedException, DataAccessException, InvalidGameID {
+    public void onMessage(Session session, String message) throws IOException, InvalidMoveException, ResponseException, SQLException, UnauthorizedException, DataAccessException {
         UserGameCommand userCommand = new Gson().fromJson(message, UserGameCommand.class);
         var commandType = userCommand.getCommandType();
         switch (commandType) {
@@ -54,29 +55,61 @@ public class WebSocketHandler {
         }
     }
 
-    private void handleJoinPlayer(Session session, JoinPlayer player) throws IOException, ResponseException, SQLException, UnauthorizedException, DataAccessException, InvalidGameID {
+    private void handleJoinPlayer(Session session, JoinPlayer player) throws IOException, ResponseException, DataAccessException {
         var username = player.getUsername();
+        var authString = player.getAuthString();
         String gameID = Integer.toString(player.getGameID());
         ConnectionManager connectionManager = gameConnectionManagers.computeIfAbsent(gameID, k -> new ConnectionManager());
-        connectionManager.add(username, session);
+        connectionManager.add(player.getAuthString(), session);
+
+        Collection<GameData> games;
+        try {
+            games = service.listGames(player.getAuthString());
+        } catch (UnauthorizedException ex) {
+            var message = "Unauthorized user";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
+        }
 
         ChessGame game = null;
-        var games = service.listGames(player.getAuthString());
         for (var listGame : games) {
             if (listGame.getGameID() == player.getGameID()) {
+                if (player.getPlayerColor() == ChessGame.TeamColor.WHITE && listGame.getWhiteUsername() == null ||
+                        player.getPlayerColor() == ChessGame.TeamColor.BLACK && listGame.getBlackUsername() == null) {
+                    var message = "Player has not joined via HTTP";
+                    var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+                    connectionManager.sendMessage(authString, error);
+                    return;
+                }
+
+                var authDataName = service.getAuthData(authString).username();
+                if (player.getPlayerColor() == ChessGame.TeamColor.WHITE && Objects.equals(listGame.getBlackUsername(), authDataName) ||
+                        player.getPlayerColor() == ChessGame.TeamColor.BLACK && Objects.equals(listGame.getWhiteUsername(), authDataName)) {
+                    var message = "User is joining as wrong color";
+                    var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+                    connectionManager.sendMessage(authString, error);
+                    return;
+                }
+
                 game = listGame.getGame();
                 break;
             }
         }
 
-        service.joinGame(player.getAuthString(), player.getPlayerColor().toString(), player.getGameID());
+        if (game == null) {
+            var message = "Game does not exist";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
+        }
 
         var message = String.format("%s has joined the game as %s", username, player.getPlayerColor().toString());
         var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
-        connectionManager.broadcast(username, notification);
+        connectionManager.broadcast(player.getAuthString(), notification);
 
         var loadGame = new LoadGame(ServerMessage.ServerMessageType.LOAD_GAME, game);
-        connectionManager.sendMessage(username, loadGame);
+        connectionManager.sendMessage(player.getAuthString(), loadGame);
     }
 
     private void handleJoinObserver(Session session, JoinObserver observer) throws IOException, ResponseException, UnauthorizedException, DataAccessException {

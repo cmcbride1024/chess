@@ -225,23 +225,26 @@ public class MySqlDataAccess implements DataAccess {
             throw new InvalidGameID("Game does not exist.");
         }
 
+        if (playerColor == null) {
+            return;
+        }
+
         switch (playerColor.toUpperCase()) {
             case "WHITE" -> {
                 if (game.getWhiteUsername() != null && !game.getWhiteUsername().isEmpty()) {
                     throw new DataAccessException("Player has already joined as white.");
                 }
                 game = game.changeWhiteName(username);
+                updateGame(game);
             }
             case "BLACK" -> {
                 if (game.getBlackUsername() != null && !game.getBlackUsername().isEmpty()) {
                     throw new DataAccessException("Player has already joined as black.");
                 }
                 game = game.changeBlackName(username);
+                updateGame(game);
             }
-            default -> throw new InvalidGameID("Invalid player color. Choose WHITE or BLACK.");
         }
-
-        updateGame(game);
     }
 
     @Override

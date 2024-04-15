@@ -23,12 +23,15 @@ public class ConnectionManager {
 
     public void broadcast(String excludeVisitorName, ServerMessage serverMessage) throws IOException {
         Gson gson = new Gson();
-        String messageJson = gson.toJson(serverMessage, ServerMessage.class);
         var removeList = new ArrayList<Connection>();
         for (var connection : connections.values()) {
             if (connection.session.isOpen()) {
                 if (!connection.visitorName.equals(excludeVisitorName)) {
-                    connection.send(messageJson);
+                    switch (serverMessage.getServerMessageType()) {
+                        case LOAD_GAME -> connection.send(gson.toJson(serverMessage, LoadGame.class));
+                        case ERROR -> connection.send(gson.toJson(serverMessage, Error.class));
+                        case NOTIFICATION -> connection.send(gson.toJson(serverMessage, Notification.class));
+                    }
                 }
             } else {
                 removeList.add(connection);
@@ -40,13 +43,14 @@ public class ConnectionManager {
         }
     }
 
-    public void sendMessage(String username, ServerMessage serverMessage) throws IOException {
-        Connection connection = connections.get(username);
+    public void sendMessage(String authToken, ServerMessage serverMessage) throws IOException {
+        Gson gson = new Gson();
+        Connection connection = connections.get(authToken);
         if (connection != null && connection.session.isOpen()) {
             switch (serverMessage.getServerMessageType()) {
-                case LOAD_GAME -> connection.send(new Gson().toJson(serverMessage, LoadGame.class));
-                case ERROR -> connection.send(new Gson().toJson(serverMessage, Error.class));
-                case NOTIFICATION -> connection.send(new Gson().toJson(serverMessage, Notification.class));
+                case LOAD_GAME -> connection.send(gson.toJson(serverMessage, LoadGame.class));
+                case ERROR -> connection.send(gson.toJson(serverMessage, Error.class));
+                case NOTIFICATION -> connection.send(gson.toJson(serverMessage, Notification.class));
             }
         }
     }

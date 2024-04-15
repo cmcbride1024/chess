@@ -52,9 +52,9 @@ public class ChessGameplay implements NotificationHandler {
         String[] columnLabels = {" ", "a", "b", "c", "d", "e", "f", "g", "h", " "};
         String[] rowLabels = {" ", "8", "7", "6", "5", "4", "3", "2", "1", " "};
         if (row == 0 || row == 9) {
-            return columnLabels[col];
+            return SET_TEXT_COLOR_WHITE + columnLabels[col] + RESET_TEXT_COLOR;
         } else if (col == 0 || col == 9) {
-            return rowLabels[row];
+            return SET_TEXT_COLOR_WHITE + rowLabels[row] + RESET_TEXT_COLOR;
         }
 
         ChessBoard board = getGameState().getBoard();
@@ -77,13 +77,13 @@ public class ChessGameplay implements NotificationHandler {
     private String chessCharacterLookup(int row, int col) {
         String piece = getLabel(row, col);
         if (row == 0 || col == 0 || row == 9 || col == 9) {
-            return piece;  // Early return for borders, which do not have pieces
+            return piece;
         }
 
-        ChessPosition newPosition = new ChessPosition(row, col);
+        ChessPosition newPosition = new ChessPosition(9 - row, col);
         ChessPiece pieceAtPosition = getGameState().getBoard().getPiece(newPosition);
         if (pieceAtPosition == null) {
-            return piece;  // Return the piece character, which should be " " for empty squares
+            return piece;
         }
 
         if (pieceAtPosition.getTeamColor().equals(ChessGame.TeamColor.WHITE)) {
@@ -101,6 +101,7 @@ public class ChessGameplay implements NotificationHandler {
                 int newRow = (Objects.equals(playerColor, ChessGame.TeamColor.WHITE)) ? row : 9 - row;
                 int newCol = (Objects.equals(playerColor, ChessGame.TeamColor.WHITE)) ? col : 9 - col;
                 String chessCharacter = chessCharacterLookup(newRow, newCol);
+
                 if (row == 0 || col == 0 || row == 9 || col == 9) {
                     board.append(SET_BG_COLOR_LIGHT_GREY);
                 } else {
@@ -118,7 +119,7 @@ public class ChessGameplay implements NotificationHandler {
                         }
 
                         if (containsSquare) {
-                            bgColor = isDark ? SET_BG_COLOR + "32m" : SET_BG_COLOR + "92m";
+                            bgColor = isDark ? SET_BG_COLOR + "102m" : SET_BG_COLOR + "42m";
                         } else {
                             bgColor = isDark ? SET_BG_COLOR + "95m" : SET_BG_COLOR + "222m";
                         }
@@ -141,7 +142,6 @@ public class ChessGameplay implements NotificationHandler {
 
     public void observeGame() throws ResponseException {
         ws.observeGame(gameID, authData);
-        client.setState(State.OBSERVING);
     }
 
     public String redrawBoard() {
@@ -165,6 +165,12 @@ public class ChessGameplay implements NotificationHandler {
             char rowChar = position.charAt(1);
             int col = columnChar - 'a' + 1;
             int row = rowChar - '1' + 1;
+
+            if (playerColor.equals(ChessGame.TeamColor.BLACK)) {
+                col = 9 - col;
+            } else {
+                row = 9 - row;
+            }
 
             return new ChessPosition(row, col);
         } catch (Exception ex) {
@@ -229,6 +235,17 @@ public class ChessGameplay implements NotificationHandler {
                 SET_TEXT_COLOR_BLUE + "help" + SET_TEXT_COLOR_WHITE + " - with possible commands\n";
     }
 
+    private void printPrompt() {
+        State loggedIn = client.getState();
+        var startLine = switch(loggedIn) {
+            case State.SIGNEDIN -> "[LOGGED_IN]";
+            case State.SIGNEDOUT -> "[LOGGED_OUT]";
+            case State.GAMEPLAY -> "[PLAYING]";
+            case State.OBSERVING -> "[OBSERVING]";
+        };
+        System.out.print("\n" + ERASE_SCREEN + startLine + " >>> ");
+    }
+
     @Override
     public void notify(String message) {
         ServerMessage serverMessage = new Gson().fromJson(message, ServerMessage.class);
@@ -239,14 +256,19 @@ public class ChessGameplay implements NotificationHandler {
                 setGameState(loadGame.getGame());
                 System.out.println();
                 System.out.println(boardLayout(playerColor, false, null));
+                printPrompt();
             }
             case ERROR -> {
                 Error error = new Gson().fromJson(message, Error.class);
-                System.out.println(SET_TEXT_COLOR_GREEN + error.getErrorMessage());
+                System.out.println();
+                System.out.println(SET_TEXT_COLOR_GREEN + error.getErrorMessage() + SET_TEXT_COLOR_WHITE);
+                printPrompt();
             }
             case NOTIFICATION -> {
                 Notification notification = new Gson().fromJson(message, Notification.class);
-                System.out.println(SET_TEXT_COLOR_GREEN + notification.getMessage());
+                System.out.println();
+                System.out.println(SET_TEXT_COLOR_GREEN + notification.getMessage() + SET_TEXT_COLOR_WHITE);
+                printPrompt();
             }
         }
     }

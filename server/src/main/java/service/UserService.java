@@ -59,6 +59,10 @@ public class UserService {
         return dataAccess.getGames();
     }
 
+    public AuthData getAuthData(String authToken) throws ResponseException, DataAccessException {
+        return dataAccess.getAuth(authToken);
+    }
+
     public int createGame(String authToken, String gameName) throws UnauthorizedException, DataAccessException, ResponseException, SQLException {
         AuthData authData = dataAccess.getAuth(authToken);
         if (authData == null) {
