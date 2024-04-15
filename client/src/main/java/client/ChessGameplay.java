@@ -238,10 +238,9 @@ public class ChessGameplay implements NotificationHandler {
     private void printPrompt() {
         State loggedIn = client.getState();
         var startLine = switch(loggedIn) {
-            case State.SIGNEDIN -> "[LOGGED_IN]";
-            case State.SIGNEDOUT -> "[LOGGED_OUT]";
             case State.GAMEPLAY -> "[PLAYING]";
             case State.OBSERVING -> "[OBSERVING]";
+            default -> "";
         };
         System.out.print("\n" + ERASE_SCREEN + startLine + " >>> ");
     }
