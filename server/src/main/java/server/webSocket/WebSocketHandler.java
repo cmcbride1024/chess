@@ -250,8 +250,10 @@ public class WebSocketHandler {
             if (listGame.getGameID() == resign.getGameID()) {
                 chessGame = listGame.getGame();
 
-                if (!Objects.equals(listGame.getWhiteUsername(), username) && !Objects.equals(listGame.getBlackUsername(), username)) {
-                    var message = "The game is over";
+                var authDataName = service.getAuthData(authString).username();
+                if (!Objects.equals(listGame.getWhiteUsername(), authDataName) &&
+                        !Objects.equals(listGame.getBlackUsername(), authDataName)) {
+                    var message = "Observer can't resign";
                     var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
                     connectionManager.sendMessage(authString, error);
                     return;
@@ -260,8 +262,14 @@ public class WebSocketHandler {
         }
 
         assert chessGame != null;
-        chessGame.gameIsOver();
 
+        if (chessGame.getGameIsOver()) {
+            var message = "Game is already over";
+            var error = new Error(ServerMessage.ServerMessageType.ERROR, message);
+            connectionManager.sendMessage(authString, error);
+            return;
+        }
+        chessGame.gameIsOver();
         service.updateGame(resign.getAuthString(), chessGame, resign.getGameID());
 
         var message = String.format("%s has resigned. The game is over", username);
