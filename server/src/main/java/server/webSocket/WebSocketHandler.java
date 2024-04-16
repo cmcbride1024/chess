@@ -172,9 +172,9 @@ public class WebSocketHandler {
             if (listGame.getGameID() == makeMove.getGameID()) {
                 chessGame = listGame.getGame();
             }
-            if (listGame.getWhiteUsername().equals(authDataName)) {
+            if (listGame.getWhiteUsername() != null && listGame.getWhiteUsername().equals(authDataName)) {
                 playerColor = ChessGame.TeamColor.WHITE;
-            } else if (listGame.getBlackUsername().equals(authDataName)) {
+            } else if (listGame.getBlackUsername() != null && listGame.getBlackUsername().equals(authDataName)) {
                 playerColor = ChessGame.TeamColor.BLACK;
             }
         }
@@ -224,6 +224,16 @@ public class WebSocketHandler {
             } else if (chessGame.isInStalemate(ChessGame.TeamColor.BLACK)) {
                 message = "The game is over. Black is in stalemate";
             }
+            var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            connectionManager.broadcast("", notification);
+        }
+
+        if (chessGame.isInCheck(ChessGame.TeamColor.WHITE)) {
+            var message = "White is in check";
+            var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            connectionManager.broadcast("", notification);
+        } else if (chessGame.isInCheck(ChessGame.TeamColor.BLACK)) {
+            var message = "Black is in check";
             var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
             connectionManager.broadcast("", notification);
         }
