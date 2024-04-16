@@ -1,6 +1,7 @@
 package server.webSocket;
 
 import chess.ChessGame;
+import chess.ChessPosition;
 import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataAccess.DataAccessException;
@@ -152,6 +153,11 @@ public class WebSocketHandler {
         connectionManager.sendMessage(authString, loadGame);
     }
 
+    private String convertPosition(ChessPosition chessPosition) {
+        char[] letters = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+        return letters[chessPosition.getColumn() - 1] + Integer.toString(chessPosition.getRow());
+    }
+
     private void handleMakeMove(MakeMove makeMove) throws IOException, ResponseException, UnauthorizedException, DataAccessException, InvalidMoveException, SQLException {
         var username = makeMove.getUsername();
         var authString = makeMove.getAuthString();
@@ -207,7 +213,23 @@ public class WebSocketHandler {
         chessGame.makeMove(move);
         service.updateGame(authString, chessGame, makeMove.getGameID());
 
-        var message = String.format("%s moved from %s to %s", username, move.getStartPosition().toString(), move.getEndPosition().toString());
+        if (chessGame.getGameIsOver()) {
+            String message = null;
+            if (chessGame.isInCheckmate(ChessGame.TeamColor.WHITE)) {
+                message = "The game is over. White is in checkmate";
+            } else if (chessGame.isInCheckmate(ChessGame.TeamColor.BLACK)) {
+                message = "The game is over. Black is in checkmate";
+            } else if (chessGame.isInStalemate(ChessGame.TeamColor.WHITE)) {
+                message = "The game is over. White is in stalemate";
+            } else if (chessGame.isInStalemate(ChessGame.TeamColor.BLACK)) {
+                message = "The game is over. Black is in stalemate";
+            }
+            var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            connectionManager.broadcast("", notification);
+        }
+
+        var message = String.format("%s moved %s from %s to %s", username, chessGame.getBoard().getPiece(move.getEndPosition()).toString(),
+                convertPosition(move.getStartPosition()), convertPosition(move.getEndPosition()));
         var notification = new Notification(ServerMessage.ServerMessageType.NOTIFICATION, message);
         connectionManager.broadcast(authString, notification);
 
