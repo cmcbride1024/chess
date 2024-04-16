@@ -244,10 +244,10 @@ public class WebSocketHandler {
         var message = String.format("%s has left game %s", username, gameID);
 
         GameData gameData = service.getGameData(leave.getAuthString(), leave.getGameID());
-        if (gameData.getWhiteUsername().equals(username)) {
+        if (gameData.getWhiteUsername() != null && gameData.getWhiteUsername().equals(username)) {
             gameData = gameData.changeWhiteName(null);
             service.updateGameData(leave.getAuthString(), gameData);
-        } else if (gameData.getBlackUsername().equals(username)) {
+        } else if (gameData.getBlackUsername() != null && gameData.getBlackUsername().equals(username)) {
             gameData = gameData.changeBlackName(null);
             service.updateGameData(leave.getAuthString(), gameData);
         } else {
